@@ -1,0 +1,5 @@
+import "core-js/stable";
+import "regenerator-runtime/runtime";
+import FormValidator from "./src/FormValidator";
+
+window.FormValidator = FormValidator;
