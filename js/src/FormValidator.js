@@ -211,6 +211,11 @@ export default class FormValidator {
 
             let field = this.fields[k]
             if(field.dependents !== undefined) {
+                
+                // field.fields.forEach(_field => {
+                //     _field.
+                // })
+
                 field.dependents.forEach(dependent => {
                     
                     let hideFields = () => {
@@ -218,7 +223,7 @@ export default class FormValidator {
                             let dependentField = this.fields[dependentFieldName];
                             dependentField.$wrapper.classList.add(this.fieldRenderPreferences.wrapperHiddenClass)
                             dependentField.disableRules()
-                            dependentField.status = undefined;
+                            dependentField.status = 1;
                         })
                     }
                     let showFields = () => {

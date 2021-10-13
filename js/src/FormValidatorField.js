@@ -68,7 +68,7 @@ export default class FormValidatorField {
                 if(this.resetFieldValidationOnChange) {
                     this.resetValidation();
                 }
-                this._validator.updateDependentFields()
+                // this._validator.updateDependentFields()
             })
         })
 
@@ -81,8 +81,11 @@ export default class FormValidatorField {
                 }
 
                 $field.addEventListener(eventName, () => {
+                    if(eventName === 'change') {
+                        this.resetValidation();
+                    }
                     let validate = () => {
-                        this.validate((eventName !== "change")).then((message) => {
+                        this.validate().then((message) => {
                         }).catch((message) => {
                         }).finally(() => {
                             this._validator.updateDependentFields()
@@ -260,6 +263,12 @@ export default class FormValidatorField {
             })
         }
 
+        if(!this.useRules) {
+            return new Promise((resolve, reject) => {
+                resolve()
+            })
+        }
+
         this.debugger.log("validate(): Field \"#"+this.name+"\" will be validated", this);
 
         (this.events && this.events.onBeforeValidate) && (this.events.onBeforeValidate(this));
@@ -273,34 +282,25 @@ export default class FormValidatorField {
             let rulesPromises = [];
             let value = this.getValue()
             
-            if(!this.useRules) {
-                rulesPromises = [
-                    new Promise(function(resolve, reject) {
-                        resolve()
-                    })
-                ]
-
-            } else {
-                this.rules.forEach(rule => {
+            this.rules.forEach(rule => {
                     
-                    if(DEFAULT_RULES[rule.name]) {
-                        rule = new FormValidatorRule({...DEFAULT_RULES[rule.name], ...removeUndefinedObjectKeys(rule)})
-                    }
-    
-                    let rulePromise = new Promise(function(resolveRulePromise, rejectRulePromise) {
-                        rule.test(value, (result) => {
-                            if(result) {
-                                resolveRulePromise()
-                            } else {
-                                rejectRulePromise(rule.message)
-                            }
-                        })
+                if(DEFAULT_RULES[rule.name]) {
+                    rule = new FormValidatorRule({...DEFAULT_RULES[rule.name], ...removeUndefinedObjectKeys(rule)})
+                }
+
+                let rulePromise = new Promise(function(resolveRulePromise, rejectRulePromise) {
+                    rule.test(value, (result) => {
+                        if(result) {
+                            resolveRulePromise()
+                        } else {
+                            rejectRulePromise(rule.message)
+                        }
                     })
-
-                    rulesPromises.push(rulePromise);
-
                 })
-            }
+
+                rulesPromises.push(rulePromise);
+
+            })
             
             Promise.all(rulesPromises).then(() => {
                 this.debugger.log("validate(): Field \"#"+this.name+"\" is valid", this);
@@ -314,9 +314,6 @@ export default class FormValidatorField {
                 
             }).finally(() => {
                 (this.events && this.events.onValidate) && (this.events.onValidate(this));
-                if(focusBack) {
-                    this.focus()
-                }
             });
         }
 

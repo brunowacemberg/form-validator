@@ -10,7 +10,7 @@ export const DEFAULT_OPTIONS = {
         
         // "Validating" field state
         showValidatingMessage: false,
-        validatingMessage: "Validando...",
+        validatingMessage: "Validating...",
         validatingMessageHTML: "<div class=\"valid-feedback text-muted d-block\">{{message}}</div>",
         addValidatingClass: false,
         validatingClass: "is-validating",
@@ -19,7 +19,7 @@ export const DEFAULT_OPTIONS = {
         
         // "Valid" field state
         showValidMessage: true,
-        validMessage: "Campo válido",
+        validMessage: "All set ;)",
         validMessageHTML: "<div class=\"valid-feedback text-success d-block\">{{message}}</div>",
         addValidClass: true,
         validClass: "is-valid",

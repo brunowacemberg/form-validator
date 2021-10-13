@@ -3,7 +3,7 @@
 <head>
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Validato!</title>
+    <title>Form Validator</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <script src='js/dist/bundle.js'></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
@@ -13,52 +13,75 @@
     
     <div class="container my-3">
         
-        
-        <form id="formId" action="#">
-            <div class="form-group form-group-lg">
-                <label for="field_name">Full name</label>
-                <input type="text" class="form-control form-control-lg" name="field_name" id="field_name" placeholder="Your full name">
-            </div>
-            <div class="form-group form-group-lg">
-                <label for="field_email">Email address</label>
-                <input type="text" class="form-control form-control-lg" name="field_email" id="field_email" placeholder="Your email address">
-            </div>
-            <div class="form-group form-group-lg">
-                <label for="field_phoneNumber">Phone number</label>
-                <input type="text" class="form-control form-control-lg" name="field_phoneNumber" id="field_phoneNumber" placeholder="Your phone number">
-            </div>
-            <div class="form-group form-group-lg">
-                <div><label>Gender</label></div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="field_gender" id="field_gender_male" value="male">
-                    <label class="form-check-label" for="field_gender_male">Male</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="field_gender" id="field_gender_female" value="female">
-                    <label class="form-check-label" for="field_gender_female">Female</label>
-                </div>
-
-            </div>
-
-            <div class="form-group form-group-lg">
-                <div><label>Shaves beard?</label></div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="field_shavesBeard" id="field_shavesBeard_yes" value="yes">
-                    <label class="form-check-label" for="field_shavesBeard_yes">Yes</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="field_shavesBeard" id="field_shavesBeard_no" value="no">
-                    <label class="form-check-label" for="field_shavesBeard_no">No</label>
-                </div>
-
-            </div>
+        <form id="formId" action="#" autocomplete="off">
             
-            <div class="d-flex justify-content-end">
+            <div class="row">
+                <div class="col-md">
+                    <div class="form-group form-group-lg">
+                        <label for="field_name">Full name</label>
+                        <input type="text" class="form-control form-control-lg" name="field_name" id="field_name" placeholder="Your full name">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md">
+                    <div class="form-group form-group-lg">
+                        <label for="field_email">Email address</label>
+                        <input type="text" class="form-control form-control-lg" name="field_email" id="field_email" placeholder="Your email address">
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="form-group form-group-lg">
+                        <label for="field_phoneNumber">Phone number</label>
+                        <input type="text" class="form-control form-control-lg" name="field_phoneNumber" id="field_phoneNumber" placeholder="Your phone number">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md">
+                    <div class="form-group form-group-lg">
+                        <div><label>Are you currently employed?</label></div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="field_employed" id="field_employed_yes" value="true">
+                            <label class="form-check-label" for="field_employed_yes">Yes</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="field_employed" id="field_employed_no" value="false">
+                            <label class="form-check-label" for="field_employed_no">No</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md">
+                    <div class="form-group form-group-lg">
+                        <label for="field_company">Where do you work at?</label>
+                        <input type="text" class="form-control form-control-lg" name="field_company" id="field_company" placeholder="Company name">
+                    </div>
+                </div>
+                <div class="col-md">
+                    <div class="form-group form-group-lg">
+                        <label for="field_employees">How many employees?</label>
+                        <select class="form-control form-control-lg" name="field_employees" id="field_employees">
+                            <option value="">Select</option>
+                            <option value="100">Up to 100</option>
+                            <option value="500">Up to 500</option>
+                            <option value="1000">Up to 1000</option>
+                            <option value="1000+">1000 or more</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+        
+            
+            <div class="d-flex justify-content-end mt-5">
                 <a onclick="validator.resetForm()" class="btn btn-secondary btn-lg mr-2">Reset form</a>
                 <input type="submit" onclick="event.preventDefault(); validator.submit()" class="btn btn-primary btn-lg" value="Submit form">
-                
-
             </div>
+
         </form>
         
     </div>
@@ -79,7 +102,7 @@
                 
                 // "Validating" field state
                 showValidatingMessage: false,
-                validatingMessage: "Validando...",
+                validatingMessage: "Validating...",
                 validatingMessageHTML: "<div class=\"valid-feedback text-muted d-block\">{{message}}</div>",
                 addValidatingClass: false,
                 validatingClass: "is-validating",
@@ -88,7 +111,7 @@
                 
                 // "Valid" field state
                 showValidMessage: true,
-                validMessage: "Campo válido",
+                validMessage: "Field is valid",
                 validMessageHTML: "<div class=\"valid-feedback text-success d-block\">{{message}}</div>",
                 addValidClass: true,
                 validClass: "is-valid",
@@ -108,8 +131,7 @@
             fields: [
                 
                 {
-                    name: "field_name", // my be array if tyoe radio (equal names, different ids, same value)
-                    group: "personalData",
+                    name: "field_name", // may be array if tyoe radio (equal names, different ids, same value)
                     info: "Seu nome",
                     rules: [
                         {
@@ -130,10 +152,27 @@
                 },
                 
                 {
-                    name: "field_email", // my be array if tyoe radio (equal names, different ids, same value)
-                    group: "personalData",
-                    info: "Enviaremos uma mensagem de confirmação para o seu e-mail",
-                    rules: ["required", "email", "userExists"],
+                    name: "field_email", 
+                    info: "We will send you a confirmation email",
+                    rules: [
+                        "required", 
+                        "email", 
+                        {
+                            name: 'userExists',
+                            parameter: null,
+                            message: "Email is already registered",
+                            fn: (value, parameter, cb) => {
+                                let r = () => {
+                                    if(value === "bruno.wacemberg@liferay.com") {
+                                        cb(false)
+                                    } else {
+                                        cb(true)
+                                    }
+                                }
+                                setTimeout(r, 1500)
+                            }
+                        }
+                    ],
                     events: {
                         onBeforeFieldValidate: function(field) {
                             console.log("onBeforeFieldValidate específico da field", field)
@@ -142,18 +181,17 @@
                     },
                     fieldRenderPreferences: {
                         showValidMessage: true,
-                        validMessage: "E-mail válido :)",
+                        validMessage: "Email is valid ;)",
                         showValidatingMessage: true,
-                        validatingMessage: "Validando e-mail...",
+                        validatingMessage: "Validating email...",
                         addWrapperValidClass: true,
                         addValidClass: true,
                     },
                 },
                 
                 {
-                    name: "field_phoneNumber", // my be array if tyoe radio (equal names, different ids, same value)
-                    group: "personalData",
-                    info: "Digite aqui algum número para falarmos com você",
+                    name: "field_phoneNumber", // may be array if tyoe radio (equal names, different ids, same value)
+                    info: "Please type your number so we can reach you",
                     rules: [
                         "required",
                         {
@@ -168,51 +206,49 @@
                 },
             
                 {
-                    name: "field_gender",
-                    group: "personalData",
-                    info: "Seu gênero",
+                    name: "field_employed",
+                    info: "Tell us if you're employed",
                     rules: [,
                         {
                             name: "required"
                         }
                     ],
-                    fieldRenderPreferences: {
-                        // addWrapperValidClass: false,
-                        // addValidClass: false,
-                        // addInvalidClass: false,
-                    },
+
                     dependents: [
                         {
                             condition: "equal",
-                            value: "male",
-                            fields: ["field_shavesBeard"]
+                            value: "true",
+                            fields: ["field_company", "field_employees"]
                         }
                     ]
                 },
                             
                 {
-                    name: "field_shavesBeard",
-                    group: "personalData_male",
+                    name: "field_company",
+                    rules: [,
+                        {
+                            name: "required"
+                        }
+                    ]
+                },
+                {
+                    name: "field_employees",
                     info: "",
                     rules: [,
                         {
                             name: "required"
                         }
-                    ],
-                    fieldRenderPreferences: {
-                        // addWrapperValidClass: false,
-                        // addValidClass: false,
-                        // addInvalidClass: false,
-                    },
+                    ]
                 }
 
             ],
             
             submit: function(validator, cb) {
-                
+
                 setTimeout(function() {
                     cb(true)
                 }, 3000)
+
             },
             
             events: {   
