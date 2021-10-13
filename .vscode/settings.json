@@ -1,3 +1,12 @@
 {
-    "autoHide.autoHideSideBar": false
+    "autoHide.autoHideSideBar": false,
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": false,
+        "**/Thumbs.db": true
+    },
+    "explorerExclude.backup": null
 }
