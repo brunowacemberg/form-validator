@@ -5,6 +5,7 @@ import maxLength from './defaultRules/maxLength';
 import userExists from './defaultRules/userExists';
 import regex from './defaultRules/regex';
 import email from './defaultRules/email';
+import fullName from './defaultRules/fullName';
 
 export default {
   required,
@@ -12,5 +13,6 @@ export default {
   maxLength,
   userExists,
   regex,
-  email
+  email,
+  fullName
 }
