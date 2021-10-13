@@ -1,6 +1,7 @@
 export default class FormValidatorRule {
     
-    constructor(ruleObject) {    
+    constructor(ruleObject) { 
+
         this.name = ruleObject.name;
         this.parameter = ruleObject.parameter;
         this.message = ruleObject.message;

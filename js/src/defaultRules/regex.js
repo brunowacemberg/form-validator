@@ -4,6 +4,7 @@ export default {
     message: 'Field is not valid',
     fn: (value, parameter, cb) => {
         !parameter && (cb(true));
-        cb(parameter.test(value))
+        let exp =  new RegExp(parameter);
+        cb(exp.test(value))
     }
 }
