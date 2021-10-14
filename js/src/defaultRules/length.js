@@ -5,8 +5,10 @@ export default {
     message: "Value is too large",
     async: false,
     fn: (values, parameter) => {
-        !parameter && (cb(true));
-        return (values.length <= parameter)
+        if(!parameter) {
+            return true
+        }
+        return (values.length === parameter)
     }
 
 }

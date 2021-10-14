@@ -29,16 +29,17 @@ export default class FormValidatorField {
         }
     
         this.name = fieldObject.name;
+        this.group = fieldObject.group;
         this.fields = Array.from(document.getElementsByName(fieldObject.name));
         this.$wrapper = this.fields[0].closest('.'+fieldObject.fieldRenderPreferences.wrapperClass)
-
+        
         this.events = fieldObject.events;
         this.helpText = fieldObject.helpText;
         this.fieldRenderPreferences = fieldObject.fieldRenderPreferences;
         this.validateFieldOnBlur = fieldObject.validateFieldOnBlur;
         this.resetFieldValidationOnChange = fieldObject.resetFieldValidationOnChange;
-        this.dependents = fieldObject.dependents;
-                
+        this.dependenceRules = fieldObject.dependenceRules;
+        
         // Prepare rules object
         this.useRules = true;
         this.rules = [];
@@ -68,7 +69,7 @@ export default class FormValidatorField {
                 if(this.resetFieldValidationOnChange) {
                     this.resetValidation();
                 }
-                // this._validator.updateDependentFields()
+                // this._validator.updateDependenceRules()
             })
         })
 
@@ -76,7 +77,7 @@ export default class FormValidatorField {
             this.fields.forEach($field => {
 
                 let eventName = 'blur';
-                if($field.getAttribute("type") === "radio") {
+                if($field.getAttribute("type") === "radio" || $field.getAttribute("type") === "checkbox") {
                     eventName = 'change'
                 }
 
@@ -88,7 +89,7 @@ export default class FormValidatorField {
                         this.validate().then((message) => {
                         }).catch((message) => {
                         }).finally(() => {
-                            this._validator.updateDependentFields()
+                            this._validator.updateDependenceRules()
                         })
                     }
                     validate()
@@ -100,17 +101,17 @@ export default class FormValidatorField {
     }
 
 
-    getValue() {
+    getValues() {
         if(this.fields.length > 1) { // radio or checkbox
-            let value = "";
-            if(this.fields[0].getAttribute("type") === "radio") {
+            let values = [];
+            if(this.fields[0].getAttribute("type") === "radio" || this.fields[0].getAttribute("type") === "checkbox") {
                 this.fields.forEach($field => {
                     if($field.checked) {
-                        value = $field.value
+                        values.push($field.value)
                     }
                 })
             }
-            return value
+            return values
         } else {
             return this.fields[0].value
         }
@@ -172,7 +173,7 @@ export default class FormValidatorField {
 
         if(this.fieldRenderPreferences.addValidClass) {
             this.fields.forEach($field => {
-                if($field.value === this.getValue()) {
+                if(this.getValues().includes($field.value)) {
                     $field.classList.add(this.fieldRenderPreferences.validClass);
                 }
             })
@@ -196,7 +197,9 @@ export default class FormValidatorField {
 
         if(this.fieldRenderPreferences.addInvalidClass) {
             this.fields.forEach($field => {
-                $field.classList.add(this.fieldRenderPreferences.invalidClass);
+                if(this.getValues().includes($field.value)) {
+                    $field.classList.add(this.fieldRenderPreferences.invalidClass);
+                }
             })
         }
         if(this.fieldRenderPreferences.addWrapperInvalidClass) {
@@ -279,8 +282,8 @@ export default class FormValidatorField {
         this.setValidating(validatingMessage);
 
         let handleValidationPromise = (resolveValidationPromise, rejectValidationPromise) => {
-            let rulesPromises = [];
-            let value = this.getValue()
+            var rulesPromises = [];
+            var values = this.getValues()
             
             this.rules.forEach(rule => {
                     
@@ -289,8 +292,8 @@ export default class FormValidatorField {
                 }
 
                 let rulePromise = new Promise(function(resolveRulePromise, rejectRulePromise) {
-                    rule.test(value, (result) => {
-                        if(result) {
+                    rule.test(values, (cb) => {
+                        if(cb) {
                             resolveRulePromise()
                         } else {
                             rejectRulePromise(rule.message)
