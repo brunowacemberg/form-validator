@@ -19,7 +19,7 @@
                 <div class="col-md">
                     <div class="form-group form-group-lg">
                         <label for="field_name">Full name</label>
-                        <input type="text" class="form-control form-control-lg" name="field_name" id="field_name" placeholder="Your full name">
+                        <input type="text" class="form-control form-control-lg" name="field_name" placeholder="Your full name">
                     </div>
                 </div>
             </div>
@@ -27,52 +27,132 @@
                 <div class="col-md">
                     <div class="form-group form-group-lg">
                         <label for="field_email">Email address</label>
-                        <input type="text" class="form-control form-control-lg" name="field_email" id="field_email" placeholder="Your email address">
+                        <input type="text" class="form-control form-control-lg" name="field_email" placeholder="Your email address">
                     </div>
                 </div>
                 <div class="col-md">
                     <div class="form-group form-group-lg">
                         <label for="field_phoneNumber">Phone number</label>
-                        <input type="text" class="form-control form-control-lg" name="field_phoneNumber" id="field_phoneNumber" placeholder="Your phone number">
+                        <input type="text" class="form-control form-control-lg" name="field_phoneNumber" placeholder="Your phone number">
                     </div>
                 </div>
             </div>
+
+            <div class="row">
+
+                <div class="col-md">
+
+                    <div class="form-group form-group-lg">
+                        <div><label>What are your interests?</label></div>
+
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" value="11111111" id="field_interests_1" name="field_interests">
+                                    <label class="form-check-label" for="field_interests_1">
+                                        Interest 1
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" value="2" id="field_interests_2" name="field_interests">
+                                    <label class="form-check-label" for="field_interests_2">
+                                        Interest 2
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" value="3" id="field_interests_3" name="field_interests">
+                                    <label class="form-check-label" for="field_interests_3">
+                                        Interest 3
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" value="4" id="field_interests_4" name="field_interests">
+                                    <label class="form-check-label" for="field_interests_4">
+                                        Interest 4
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" value="5" id="field_interests_5" name="field_interests">
+                                    <label class="form-check-label" for="field_interests_5">
+                                        Interest 5
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" value="other" id="field_interests_other" name="field_interests">
+                                    <label class="form-check-label" for="field_interests_other">
+                                        Other (specify)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+                <div class="col-md">
+                    <div class="form-group form-group-lg">
+                        <label for="field_email">Other interests</label>
+                        <textarea class="form-control" name="field_interests_other_text" placeholder="Tell us your other interests"></textarea>
+
+                    </div>
+                    
+                </div>
+
+            </div>
+
+  
 
             <div class="row">
                 <div class="col-md">
                     <div class="form-group form-group-lg">
                         <div><label>Are you currently employed?</label></div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="field_employed" id="field_employed_yes" value="true">
+                            <input class="form-check-input" type="radio" name="field_employed" id="field_employed_yes" value="yes">
                             <label class="form-check-label" for="field_employed_yes">Yes</label>
                         </div>
                         <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="field_employed" id="field_employed_no" value="false">
+                            <input class="form-check-input" type="radio" name="field_employed" id="field_employed_no" value="no">
                             <label class="form-check-label" for="field_employed_no">No</label>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-md">
-                    <div class="form-group form-group-lg">
-                        <label for="field_company">Where do you work at?</label>
-                        <input type="text" class="form-control form-control-lg" name="field_company" id="field_company" placeholder="Company name">
+            <div data-form-validator-group-wrapper="workData_employed">
+
+                <div class="row">
+                    <div class="col-md">
+                        <div class="form-group form-group-lg">
+                            <label for="field_company">Where do you work at?</label>
+                            <input type="text" class="form-control form-control-lg" name="field_company" id="field_company" placeholder="Company name">
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <div class="form-group form-group-lg">
+                            <label for="field_employees">How many employees?</label>
+                            <select class="form-control form-control-lg" name="field_employees" id="field_employees">
+                                <option value="">Select</option>
+                                <option value="100">Up to 100</option>
+                                <option value="500">Up to 500</option>
+                                <option value="1000">Up to 1000</option>
+                                <option value="1000+">1000 or more</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md">
-                    <div class="form-group form-group-lg">
-                        <label for="field_employees">How many employees?</label>
-                        <select class="form-control form-control-lg" name="field_employees" id="field_employees">
-                            <option value="">Select</option>
-                            <option value="100">Up to 100</option>
-                            <option value="500">Up to 500</option>
-                            <option value="1000">Up to 1000</option>
-                            <option value="1000+">1000 or more</option>
-                        </select>
-                    </div>
-                </div>
+
             </div>
 
         
@@ -85,6 +165,7 @@
         </form>
         
     </div>
+
     
     
     <script>
@@ -95,10 +176,16 @@
             debug: true ,
             validateFieldOnBlur: true,
             resetFieldValidationOnChange: true,
+            resetFormOnSubmit: true,
+
+            groupWrapperHiddenClass: "d-none",
+            groupWrapperVisibleClass: "d-block",
+                
 
             fieldRenderPreferences: {
                 wrapperClass: "form-group",
                 wrapperHiddenClass: "d-none",
+                wrapperVisibleClass: "d-block",
                 
                 // "Validating" field state
                 showValidatingMessage: false,
@@ -132,7 +219,7 @@
                 
                 {
                     name: "field_name", // may be array if tyoe radio (equal names, different ids, same value)
-                    info: "Seu nome",
+                    group: "personalData",
                     rules: [
                         {
                             name: "required"
@@ -143,8 +230,8 @@
                         {
                             name: "customRuleExample1",
                             message: "Message shown when field is invalid",
-                            fn: function(value, parameter, cb) {
-                                cb(true)
+                            fn: function(value, parameter) {
+                                return true
                             }
                         }
                     ]
@@ -153,7 +240,7 @@
                 
                 {
                     name: "field_email", 
-                    info: "We will send you a confirmation email",
+                    group: "personalData",
                     rules: [
                         "required", 
                         "email", 
@@ -161,8 +248,10 @@
                             name: 'userExists',
                             parameter: null,
                             message: "Email is already registered",
-                            fn: (value, parameter, cb) => {
-                                let r = () => {
+                            async: true,
+                            fn: function(value, parameter, cb) {
+                                
+                                let r = function() {
                                     if(value === "bruno.wacemberg@liferay.com") {
                                         cb(false)
                                     } else {
@@ -191,7 +280,7 @@
                 
                 {
                     name: "field_phoneNumber", // may be array if tyoe radio (equal names, different ids, same value)
-                    info: "Please type your number so we can reach you",
+                    group: "personalData",
                     rules: [
                         "required",
                         {
@@ -204,27 +293,71 @@
                         }
                     ]
                 },
+
+                {
+                    name: "field_interests", // may be array if tyoe radio (equal names, different ids, same value)
+                    group: "personalData",
+                    rules: [
+                        {
+                            name: 'required',
+                        },
+                        {
+                            name: 'customMinlength',
+                            message: "Select a minimum of 3 items",
+                            parameter: 3,
+                            fn: function(values, parameter) {
+                                return(values.includes("other") || values.length > parameter)
+                            }
+                        },
+                        {
+                            name: 'maxLength',
+                            message: "Select a maximum of 4 items",
+                            parameter: 4
+                        }
+                    ],
+                    dependenceRules: [
+                        {
+                            name: "hasValues",
+                            parameter: "other",
+                            fields: ["field_interests_other_text"]
+                        }
+                    ]
+                },
+
+                {
+                    name: "field_interests_other_text", // may be array if tyoe radio (equal names, different ids, same value)
+                    group: "personalData",
+                    rules: [
+                        {
+                            name: 'minLength',
+                            parameter: 3,
+                            message: "Please specify "
+                        }
+                    ]
+                },
+                
             
                 {
                     name: "field_employed",
-                    info: "Tell us if you're employed",
+                    group: "personalData",
                     rules: [,
                         {
                             name: "required"
                         }
                     ],
 
-                    dependents: [
+                    dependenceRules: [
                         {
-                            condition: "equal",
-                            value: "true",
-                            fields: ["field_company", "field_employees"]
+                            name: "equal",
+                            parameter: "yes",
+                            groups: ["workData_employed"]
                         }
                     ]
                 },
                             
                 {
                     name: "field_company",
+                    group: "workData_employed",
                     rules: [,
                         {
                             name: "required"
@@ -233,12 +366,8 @@
                 },
                 {
                     name: "field_employees",
-                    info: "",
-                    rules: [,
-                        {
-                            name: "required"
-                        }
-                    ]
+                    group: "workData_employed",
+                    rules: ["required"]
                 }
 
             ],

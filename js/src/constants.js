@@ -1,12 +1,20 @@
-export const DEFAULT_OPTIONS = {
+const GROUP_WRAPPER_DATA_ATTRIBUTE = 'data-form-validator-group-wrapper';
+
+const DEFAULT_OPTIONS = {
 
     debug: false,
     validateFieldOnBlur: true,
     resetFieldValidationOnChange: true,
+    resetFormOnSubmit: true,
+
+    groupWrapperHiddenClass: "d-none",
+    groupWrapperVisibleClass: "d-block",
+        
 
     fieldRenderPreferences: {
         wrapperClass: "form-group",
         wrapperHiddenClass: "d-none",
+        wrapperVisibleClass: "d-block",
         
         // "Validating" field state
         showValidatingMessage: false,
@@ -19,7 +27,7 @@ export const DEFAULT_OPTIONS = {
         
         // "Valid" field state
         showValidMessage: true,
-        validMessage: "All set ;)",
+        validMessage: "Field is valid",
         validMessageHTML: "<div class=\"valid-feedback text-success d-block\">{{message}}</div>",
         addValidClass: true,
         validClass: "is-valid",
@@ -95,3 +103,10 @@ export const DEFAULT_OPTIONS = {
     }
 
 } 
+
+
+
+export default {
+    GROUP_WRAPPER_DATA_ATTRIBUTE,
+    DEFAULT_OPTIONS
+}

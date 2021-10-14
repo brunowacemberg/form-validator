@@ -1,4 +1,6 @@
-import { DEFAULT_OPTIONS } from './constants';
+import constants from './constants';
+import DEFAULT_RULES from './defaultRules';
+import FormValidatorRule from './FormValidatorRule';
 import FormValidatorField from './FormValidatorField';
 import Debugger from './Debugger';
 
@@ -11,7 +13,6 @@ const removeUndefinedObjectKeys = (obj) => {
     return obj
 };
 
-
 export default class FormValidator {
     
     constructor(formId, options) {
@@ -20,7 +21,7 @@ export default class FormValidator {
 
         this.debugger.log("constructor(): New validator instance");
         this.formId = formId;
-        this.options = {...DEFAULT_OPTIONS, ...options};
+        this.options = {...constants.DEFAULT_OPTIONS, ...options};
         
         if(!document.getElementById(formId)) {
             this.debugger.logError("constructor(): Couldn't find form element \"#"+formId+"\"");
@@ -83,44 +84,57 @@ export default class FormValidator {
 
     init() {
         this.debugger.log("init(): Initializing validator...");   
-        
+
         this.$form = document.getElementById(this.formId);
         this.fieldRenderPreferences = this.options.fieldRenderPreferences;
         this.events = this.options.events;
         this.validateFieldOnBlur = this.options.validateFieldOnBlur;
         this.resetFieldValidationOnChange = this.options.resetFieldValidationOnChange;
+        this.resetFormOnSubmit = this.options.resetFormOnSubmit;
         this.submitFn = this.options.submit;
+        this.groupWrapperHiddenClass = this.options.groupWrapperHiddenClass;
+        this.groupWrapperVisibleClass = this.options.groupWrapperVisibleClass;
         this.submitted = false;
         this.fields = {};
-        this.options.fields.forEach(fieldObject => {
+        this.options.fields.forEach(_fieldObject => {
 
-            if(fieldObject.fieldRenderPreferences !== undefined) {
-                fieldObject.fieldRenderPreferences = {...this.fieldRenderPreferences, ...removeUndefinedObjectKeys(fieldObject.fieldRenderPreferences)}
+            var initField = (fieldObject) => {
+                this.debugger.log("initField(): Initializing field", this.fields[fieldObject.name]); 
+
+                if(fieldObject.fieldRenderPreferences !== undefined) {
+                    fieldObject.fieldRenderPreferences = {...this.fieldRenderPreferences, ...removeUndefinedObjectKeys(fieldObject.fieldRenderPreferences)}
+                } else {
+                    fieldObject.fieldRenderPreferences = this.fieldRenderPreferences
+                }
+                if(fieldObject.validateFieldOnBlur === undefined) {
+                    fieldObject.validateFieldOnBlur = this.validateFieldOnBlur
+                }
+                if(fieldObject.resetFieldValidationOnChange === undefined) {
+                    fieldObject.resetFieldValidationOnChange = this.resetFieldValidationOnChange
+                }
+                if(fieldObject.events !== undefined) {
+                    if(fieldObject.events.onBeforeFieldValidate === undefined && this.events.onBeforeFieldValidate) {
+                        fieldObject.events.onBeforeFieldValidate = this.events.onBeforeFieldValidate
+                    }
+                    if(fieldObject.events.onFieldValidate === undefined && this.events.onFieldValidate) {
+                        fieldObject.events.onFieldValidate = this.events.onFieldValidate
+                    }
+                }
+                this.fields[fieldObject.name] = new FormValidatorField(fieldObject, this.debugger.showLogs);
+            }
+
+            if(typeof _fieldObject.name === "object") {
+                _fieldObject.name.forEach(fieldName => {
+                    let obj = _fieldObject;
+                    obj.name = fieldName;
+                    initField(obj);
+                })
             } else {
-                fieldObject.fieldRenderPreferences = this.fieldRenderPreferences
+                let obj = _fieldObject;
+                initField(obj);
             }
-            
-            if(fieldObject.validateFieldOnBlur === undefined) {
-                fieldObject.validateFieldOnBlur = this.validateFieldOnBlur
-            }
-            if(fieldObject.resetFieldValidationOnChange === undefined) {
-                fieldObject.resetFieldValidationOnChange = this.resetFieldValidationOnChange
-            }
-            
-            if(fieldObject.events !== undefined) {
-                if(fieldObject.events.onBeforeFieldValidate === undefined && this.events.onBeforeFieldValidate) {
-                    fieldObject.events.onBeforeFieldValidate = this.events.onBeforeFieldValidate
-                }
-                if(fieldObject.events.onFieldValidate === undefined && this.events.onFieldValidate) {
-                    fieldObject.events.onFieldValidate = this.events.onFieldValidate
-                }
-            }
-
-            this.fields[fieldObject.name] = new FormValidatorField(fieldObject, this.debugger.showLogs);
-            this.debugger.log("initField(): Initializing field", this.fields[fieldObject.name]); 
 
         }) 
-
 
         this.$form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -136,7 +150,7 @@ export default class FormValidator {
             field._validator = this;
         })
 
-        this.updateDependentFields()
+        this.updateDependenceRules()
 
         this.debugger.log("init(): Validator has been initialized", this);   
     }
@@ -144,15 +158,12 @@ export default class FormValidator {
     validate() {
         this.debugger.log("validate(): Form will be validated");
         this.events.onBeforeValidate && (this.events.onBeforeValidate(this));
-          
+
         let handleValidationPromise = (resolveValidationPromise, rejectValidationPromise) => {
-            
             let fieldsValidationPromises = [];
-            
             this.eachField((field) => {
                 fieldsValidationPromises.push(field.validate())
             }) 
-            
             Promise.all(fieldsValidationPromises).then(() => {
                 resolveValidationPromise()
             }).catch(() => {
@@ -160,7 +171,6 @@ export default class FormValidator {
             })
             
         }
-        
         return new Promise(handleValidationPromise);
         
     }
@@ -169,7 +179,7 @@ export default class FormValidator {
         this.eachField(field => {
             field.resetValidation();
         })
-        this.updateDependentFields()
+        this.updateDependenceRules()
         this.debugger.log("resetForm(): Form validation has been reset");
     }
 
@@ -205,56 +215,117 @@ export default class FormValidator {
     showFormSuccess() {
         alert('Submission has succeeded!')
     }
-    
-    updateDependentFields() {
+
+    getGroupWrapper(groupName) {
+        let $wrapper = this.$form.querySelector('['+constants.GROUP_WRAPPER_DATA_ATTRIBUTE+'="' + groupName + '"]');
+        return $wrapper
+    }
+
+    getGroupFields(groupName) {
+        let fields = [];
+        this.eachField(field => {
+            if(field.group == groupName) {
+                fields.push(field)
+            }
+        })
+        return fields
+    }
+
+
+    updateDependenceRules() {
+
+        this.debugger.log("updateDependenceRules(): Updating...", this);   
+
         Object.keys(this.fields).forEach(k => {
 
-            let field = this.fields[k]
-            if(field.dependents !== undefined) {
-                
-                // field.fields.forEach(_field => {
-                //     _field.
-                // })
+            var field = this.fields[k]
+            if(field.dependenceRules !== undefined) {
 
-                field.dependents.forEach(dependent => {
-                    
-                    let hideFields = () => {
-                        dependent.fields.forEach(dependentFieldName => {
-                            let dependentField = this.fields[dependentFieldName];
-                            dependentField.$wrapper.classList.add(this.fieldRenderPreferences.wrapperHiddenClass)
-                            dependentField.disableRules()
-                            dependentField.status = 1;
+                field.dependenceRules.forEach(depRuleObject => {
+
+                    if(!depRuleObject.fields){
+                        depRuleObject.fields = [];
+                    }
+                    if(!depRuleObject.groups){
+                        depRuleObject.groups = [];
+                    }
+
+                    var getTargetFields = () => {
+
+                        let fields = [];
+                        //read groups
+
+                        depRuleObject.groups.forEach(groupName => {
+                            let groupFields = this.getGroupFields(groupName)
+                            groupFields.forEach(groupField => {
+                                fields.push(groupField)
+                            })
+                        })
+                        depRuleObject.fields.forEach(dependenceRuleFieldName => {
+                            let dependentField = this.fields[dependenceRuleFieldName];
+                            fields.push(dependentField)
+                        })
+                        return fields
+                    }
+
+                    let hide = () => {
+
+                        depRuleObject.groups.forEach(groupName => {
+                            let $groupWrapper = this.getGroupWrapper(groupName);
+                            if($groupWrapper) {
+                                $groupWrapper.classList.add(this.groupWrapperHiddenClass);
+                                $groupWrapper.classList.remove(this.groupWrapperVisibleClass);
+                            }
+                        })
+                        
+                        getTargetFields().forEach(targetField => {
+                            targetField.$wrapper.classList.add(this.fieldRenderPreferences.wrapperHiddenClass);
+                            targetField.$wrapper.classList.remove(this.fieldRenderPreferences.wrapperVisibleClass);
+                            targetField.disableRules()
+                            targetField.status = 1;
+                        })
+
+                    }
+                    let show = () => {
+                        depRuleObject.groups.forEach(groupName => {
+                            let $groupWrapper = this.getGroupWrapper(groupName);
+                            if($groupWrapper) {
+                                $groupWrapper.classList.remove(this.groupWrapperHiddenClass)
+                                $groupWrapper.classList.add(this.groupWrapperVisibleClass)
+                            }
+                        })
+
+                        getTargetFields().forEach(targetField => {
+                            targetField.$wrapper.classList.remove(this.fieldRenderPreferences.wrapperHiddenClass)
+                            targetField.$wrapper.classList.add(this.fieldRenderPreferences.wrapperVisibleClass)
+                            targetField.enableRules()
+                            targetField.status = undefined
                         })
                     }
-                    let showFields = () => {
-                        dependent.fields.forEach(dependentFieldName => {
-                            let dependentField = this.fields[dependentFieldName];
-                            dependentField.$wrapper.classList.remove(this.fieldRenderPreferences.wrapperHiddenClass)
-                            dependentField.enableRules()
-                            dependentField.status = undefined;
-                        })
-                    }
 
-                    let conditions = {
-                        equal: (a,b) => {
-                            return (a === b)
-                        },
-                        notEqual: (a,b) => {
-                            return (a != b)
-                        },
-                        empty: (a) => {
-                            return (!a || a === "")
-                        },
-                        notEmpty: (a) => {
-                            return (a && a != "")
-                        },
-                    }
-
-                    if(dependent.condition && conditions[dependent.condition](field.getValue(),dependent.value)) {
-                        showFields()
+                    if(DEFAULT_RULES[depRuleObject.name]) {
+                        var rule = new FormValidatorRule({...DEFAULT_RULES[depRuleObject.name], ...removeUndefinedObjectKeys(depRuleObject)})
                     } else {
-                        hideFields()
+                        var rule = new FormValidatorRule(depRuleObject)
                     }
+
+                    let dependenceRulePromise = new Promise(function(resolve, reject) {
+                        rule.test(field.getValues(), (cb) => {
+                            if(cb === true) {
+                                resolve()
+                            } else {
+                                reject()
+                            }
+                        })
+                    })
+
+                    dependenceRulePromise.then(() => {
+                        show()
+                    }).catch(() => {
+                        hide()
+                    })
+
+                    
 
                 })
             }
@@ -277,9 +348,11 @@ export default class FormValidator {
                     this.debugger.log("submit(): Form submission has succeeded");
                     this.showFormSuccess();
                     this.submitted = false;
-                    this.resetForm();
-                    this.enableForm();
-                    
+                    if(this.resetFormOnSubmit) {
+                        this.resetForm();
+                        this.enableForm();
+                    }
+                   
                 } else {
                     this.debugger.logError("submit(): Form submission has failed");
                     this.showFormFail();

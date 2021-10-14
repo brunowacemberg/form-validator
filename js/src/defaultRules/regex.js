@@ -2,9 +2,16 @@ export default {
     name: 'regex',
     parameter: null,
     message: 'Invalid value',
-    fn: (value, parameter, cb) => {
+    async: false,
+    fn: (values, parameter) => {
         !parameter && (cb(true));
-        let exp =  new RegExp(parameter);
-        cb(exp.test(value))
+        let allValid = true;
+        var exp =  new RegExp(parameter);
+        values.forEach(value => {
+            if(!exp.test(value)) {
+                allValid = false
+            }
+        })
+        return allValid
     }
 }
