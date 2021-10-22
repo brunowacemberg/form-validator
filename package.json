@@ -18,7 +18,6 @@
   },
   "homepage": "https://github.com/brunowacemberg/form-validator#readme",
   "dependencies": {
-    "vanilla-masker": "^1.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.0",
@@ -33,7 +32,10 @@
     "@babel/preset-env": "^7.14.0",
     "@babel/register": "^7.13.16",
     "http-server": "^13.0.2",
-    
-    "set-value": ">=4.0.1"
+    "set-value": ">=4.0.1",
+    "vanilla-masker": "^1.2.0"
+  },
+  "browser": {
+    "vanilla-masker": false
   }
 }
