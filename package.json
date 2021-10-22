@@ -2,7 +2,7 @@
   "name": "form-validator",
   "version": "1.0.0",
   "description": "A very generic form validator",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
     "start": "http-server ./",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -26,7 +26,6 @@
     "core-js": "^3.18.2",
     "element-remove": "^1.0.4",
     "gulp": "^4.0.2",
-    "gulp-string-replace": "^1.1.2",
     "regenerator-runtime": "^0.13.9",
     "tippy.js": "^6.3.2",
     "webpack": "^5.36.1",
