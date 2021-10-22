@@ -9,7 +9,7 @@ gulp.task('default', function(done) {
     .pipe(webpack({
         mode: "development",
         output: {
-            filename: "bundle.js"
+            filename: "FormValidator.js"
         },
         module: {
             rules: [
@@ -26,7 +26,7 @@ gulp.task('default', function(done) {
             ]
         }
     }))
-    .pipe(gulp.dest('./js/dist'))
+    .pipe(gulp.dest('./dist'))
     .on('end', done);
     
 
