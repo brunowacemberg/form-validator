@@ -2,7 +2,7 @@ export default {
 
     name: 'maxLength',
     parameter: null,
-    message: "Value is too large",
+    message: "Valor grande demais",
     async: false,
     fn: (values, parameter) => {
         !parameter && (cb(true));

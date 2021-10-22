@@ -35,6 +35,7 @@
     "@babel/preset-env": "^7.14.0",
     "@babel/register": "^7.13.16",
     "element-closest-polyfill": "^1.0.4",
-    "http-server": "^13.0.2"
+    "http-server": "^13.0.2",
+    "vanilla-masker": "^1.2.0"
   }
 }

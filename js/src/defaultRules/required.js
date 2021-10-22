@@ -2,7 +2,7 @@ export default {
 
     name: 'required',
     parameter: null,
-    message: "This field is required",
+    message: "Campo obrigatório",
     async: false,
     fn: (values, parameter) => {
         return (values && values.length > 0)

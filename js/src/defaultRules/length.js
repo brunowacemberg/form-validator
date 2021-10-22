@@ -1,8 +1,8 @@
 export default {
 
-    name: 'maxLength',
+    name: 'length',
     parameter: null,
-    message: "Value is too large",
+    message: "Quantidade de itens inválida",
     async: false,
     fn: (values, parameter) => {
         if(!parameter) {
