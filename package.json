@@ -17,7 +17,8 @@
     "url": "https://github.com/brunowacemberg/form-validator/issues"
   },
   "homepage": "https://github.com/brunowacemberg/form-validator#readme",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@babel/core": "^7.14.0",
     "@babel/polyfill": "^7.12.1",
     "babel-loader": "^8.2.2",
@@ -29,13 +30,12 @@
     "regenerator-runtime": "^0.13.9",
     "tippy.js": "^6.3.2",
     "webpack": "^5.36.1",
-    "webpack-stream": "^6.1.2"
-  },
-  "devDependencies": {
+    "webpack-stream": "^6.1.2",
     "@babel/preset-env": "^7.14.0",
     "@babel/register": "^7.13.16",
     "element-closest-polyfill": "^1.0.4",
     "http-server": "^13.0.2",
-    "vanilla-masker": "^1.2.0"
+    "vanilla-masker": "^1.2.0",
+    "set-value": ">=4.0.1"
   }
 }

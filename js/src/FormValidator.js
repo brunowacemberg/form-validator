@@ -4,6 +4,14 @@ import FormValidatorRule from './FormValidatorRule';
 import FormValidatorField from './FormValidatorField';
 import Logger from './Logger';
 
+const removeUndefinedObjectKeys = (obj) => {
+    Object.keys(obj).forEach(key => {
+        if (obj[key] === undefined) {
+            delete obj[key];
+        }
+    });
+    return obj
+};
 
 export default class FormValidator {
     
