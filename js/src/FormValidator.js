@@ -308,7 +308,7 @@ export default class FormValidator {
         }
     }
 
-    handlePreventingDefault() {
+    handlePreventingDefault(e) {
         e.preventDefault();
     }
     
