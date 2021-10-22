@@ -225,14 +225,7 @@
                     name: "field_name", // may be array if tyoe radio (equal names, different ids, same value)
                     group: "personalData",
                     rules: [
-                        "required", "fullName",
-                        {
-                            name: "customRuleExample1",
-                            message: "Message shown when field is invalid",
-                            fn: function(value, parameter) {
-                                return true
-                            }
-                        }
+                        "required", "fullName"
                     ]
                     
                 },
@@ -380,7 +373,6 @@
                 setTimeout(function() {
                     cb(true)
                 }, 3000)
-
             },
 
             events: {   
@@ -393,7 +385,7 @@
                 onReset: function(form){
                     console.log('onReset global', form);
                 },
-                onBeforeSubmit: function(validator, validator){
+                onBeforeSubmit: function(validator){
                     console.log('onBeforeSubmit');
                 },
                 onSubmitFail: function(validator){
