@@ -4,4 +4,4 @@ import 'element-closest-polyfill';
 import 'element-remove';
 import FormValidator from "./src/FormValidator";
 
-window.FormValidator = FormValidator;
+export default FormValidator
