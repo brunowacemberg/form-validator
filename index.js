@@ -1,2 +1,2 @@
-import App from "./js/app";
-export default App
+const App = require('./js/app');
+exports.FormValidator = App
