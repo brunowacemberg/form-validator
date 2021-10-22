@@ -1,33 +1,25 @@
 import constants from './constants';
-import DEFAULT_RULES from './defaultRules';
+import DEFAULT_RULES from './defaultRules'
 import FormValidatorRule from './FormValidatorRule';
 import FormValidatorField from './FormValidatorField';
-import Debugger from './Debugger';
+import Logger from './Logger';
 
-const removeUndefinedObjectKeys = (obj) => {
-    Object.keys(obj).forEach(key => {
-        if (obj[key] === undefined) {
-            delete obj[key];
-        }
-    });
-    return obj
-};
 
 export default class FormValidator {
     
     constructor(formId, options) {
             
-        this.debugger = new Debugger(options.debug || false);
+        this.logger = new Logger(options.debug);
 
-        this.debugger.log("constructor(): New validator instance");
+        this.logger.log("constructor(): New validator instance");
         this.formId = formId;
         this.options = {...constants.DEFAULT_OPTIONS, ...options};
         
         if(!document.getElementById(formId)) {
-            this.debugger.logError("constructor(): Couldn't find form element \"#"+formId+"\"");
+            this.logger.logError("constructor(): Couldn't find form element \"#"+formId+"\"");
             return;
         } else {
-            this.debugger.log("constructor(): Validator will be initialized to \"#"+formId+"\"");
+            this.logger.log("constructor(): Validator will be initialized to \"#"+formId+"\"");
 
                 // Register instance
             if(!window.formValidator_instances) {
@@ -39,88 +31,47 @@ export default class FormValidator {
                 return this.init();
                 
             } else {
-                this.debugger.logError("init(): A FormValidator instance has already been initialized for the form \"#"+this.formId+"\"");   
+                this.logger.logError("init(): A FormValidator instance has already been initialized for the form \"#"+this.formId+"\"");   
             }
             
         }
         
     }
 
-
-    // triggerFormChange() {
-    //     var _changeEvent;
-    //     if(typeof(Event) === 'function') {
-    //         _changeEvent = new Event('change');
-    //     }else{
-    //         _changeEvent = document.createEvent('Event');
-    //         _changeEvent.initEvent('change', true, true);
-    //     }
-    //     this.$form.dispatchEvent(_changeEvent);
-    // }
-
-    
-    eachField(fn) {
-
-        Object.keys(this.fields).forEach(k => {
-            return fn(this.fields[k])
-        })
-        
-    }
-    
-    allFieldsValid() {
-        let hasInvalidField = false;
-        this.eachField(field => {
-            if(field.status !== 1) {
-                hasInvalidField = true;
-            }
-        })
-        return !hasInvalidField
-    }
-    
-    
     destroy() {
-        this.debugger.log("destroy(): Destroying validator...");    
+        this.logger.log("destroy(): Destroying validator...");    
+        
     }
 
     init() {
-        this.debugger.log("init(): Initializing validator...");   
+        this.logger.log("init(): Initializing validator...");   
 
         this.$form = document.getElementById(this.formId);
         this.fieldRenderPreferences = this.options.fieldRenderPreferences;
         this.events = this.options.events;
         this.validateFieldOnBlur = this.options.validateFieldOnBlur;
+        this.validateFieldOnInput = this.options.validateFieldOnInput;
         this.resetFieldValidationOnChange = this.options.resetFieldValidationOnChange;
-        this.resetFormOnSubmit = this.options.resetFormOnSubmit;
-        this.submitFn = this.options.submit;
+        this.submitFn = this.options.submitFn;
+        this.showLoadingFn = this.options.showLoadingFn;
+        this.hideLoadingFn = this.options.hideLoadingFn;
         this.groupWrapperHiddenClass = this.options.groupWrapperHiddenClass;
         this.groupWrapperVisibleClass = this.options.groupWrapperVisibleClass;
-        this.submitted = false;
+        this.enableDataRestore = this.options.enableDataRestore;
+        this.submitting = false;
         this.fields = {};
+        this.defaultRules = DEFAULT_RULES;
+        
+        this.logger.log("initField(): Initializing fields..."); 
+
         this.options.fields.forEach(_fieldObject => {
 
-            var initField = (fieldObject) => {
-                this.debugger.log("initField(): Initializing field", this.fields[fieldObject.name]); 
+            var _validator = this;
 
-                if(fieldObject.fieldRenderPreferences !== undefined) {
-                    fieldObject.fieldRenderPreferences = {...this.fieldRenderPreferences, ...removeUndefinedObjectKeys(fieldObject.fieldRenderPreferences)}
-                } else {
-                    fieldObject.fieldRenderPreferences = this.fieldRenderPreferences
-                }
-                if(fieldObject.validateFieldOnBlur === undefined) {
-                    fieldObject.validateFieldOnBlur = this.validateFieldOnBlur
-                }
-                if(fieldObject.resetFieldValidationOnChange === undefined) {
-                    fieldObject.resetFieldValidationOnChange = this.resetFieldValidationOnChange
-                }
-                if(fieldObject.events !== undefined) {
-                    if(fieldObject.events.onBeforeFieldValidate === undefined && this.events.onBeforeFieldValidate) {
-                        fieldObject.events.onBeforeFieldValidate = this.events.onBeforeFieldValidate
-                    }
-                    if(fieldObject.events.onFieldValidate === undefined && this.events.onFieldValidate) {
-                        fieldObject.events.onFieldValidate = this.events.onFieldValidate
-                    }
-                }
-                this.fields[fieldObject.name] = new FormValidatorField(fieldObject, this.debugger.showLogs);
+            var initField = (fieldObject) => {
+
+                fieldObject._validator = _validator;
+                this.fields[fieldObject.name] = new FormValidatorField(fieldObject, this.logger.showLogs);
             }
 
             if(typeof _fieldObject.name === "object") {
@@ -140,89 +91,103 @@ export default class FormValidator {
             e.preventDefault();
             this.submit(e)
         })
+
+        this.$form.addEventListener('change', (e) => {
+            
+            if(this.enableDataRestore) {
+                this.updateFormState();
+                
+            }
+            
+            this.updateDependenceRules(true)
+        })
+
         
         this._options = this.options;
         delete this.options
         delete this.formId
-
-        Object.keys(this.fields).forEach(k => {
-            let field = this.fields[k];
-            field._validator = this;
-        })
-
+        
         this.updateDependenceRules()
+        
+        if(this.enableDataRestore) {
+            this.applyFormState();
+            
+            this._validate([], true).then(() => {}).catch(() => {}).finally(() => {
+                this.updateDependenceRules();
 
-        this.debugger.log("init(): Validator has been initialized", this);   
+            })
+
+        }
+        
+        this.events.onInit && (this.events.onInit(this));
+
+        this.logger.log("init(): Validator has been initialized", this);   
+
     }
     
-    validate() {
-        this.debugger.log("validate(): Form will be validated");
-        this.events.onBeforeValidate && (this.events.onBeforeValidate(this));
 
-        let handleValidationPromise = (resolveValidationPromise, rejectValidationPromise) => {
-            let fieldsValidationPromises = [];
-            this.eachField((field) => {
-                fieldsValidationPromises.push(field.validate())
-            }) 
-            Promise.all(fieldsValidationPromises).then(() => {
-                resolveValidationPromise()
-            }).catch(() => {
-                rejectValidationPromise()
-            })
-            
-        }
-        return new Promise(handleValidationPromise);
+    eachField(fn) {
+
+        Object.keys(this.fields).forEach(k => {
+            return fn(this.fields[k])
+        })
         
     }
     
-    resetValidation() {
-        this.eachField(field => {
-            field.resetValidation();
+    allFieldsValid(fieldsNames=[]) {
+        let hasInvalidField = false;
+
+        if(!fieldsNames.length) {
+            this.eachField((field) => {
+                if(field.status !== 1) {
+                    hasInvalidField = true;
+                }
+            }) 
+        } else {
+            fieldsNames.forEach(fieldName => {
+                if(this.fields[fieldName].status !== 1) {
+                    hasInvalidField = true;
+                }
+            })
+        }
+
+        return !hasInvalidField
+
+    }
+
+    getFirstInvalidField() {
+        let firstInvalidField = undefined;
+        Object.keys(this.fields).every((k) => {
+            let field = this.fields[k];
+            if(field.status === 0) {
+                firstInvalidField = field;
+                return false;
+            }
+            return true
         })
-        this.updateDependenceRules()
-        this.debugger.log("resetForm(): Form validation has been reset");
-    }
-
-    resetForm() {
-        this.$form.reset();
-        this.resetValidation()
-        this.debugger.log("resetForm(): Form has been reset");
+        return firstInvalidField
     }
 
 
-    handleDisabledFormClick = (e) => {
-        e.preventDefault();
+    someFieldsValidating() {
+        let someFieldsValidating = false;
+        this.eachField(field => {
+            if(field.status === -1) {
+                someFieldsValidating = true;
+            }
+        })
+        return someFieldsValidating
     }
     
-    disableForm() {
-        this.$form.style.pointerEvents = "none";
-        this.$form.style.opacity = "0.7"
-        this.$form.addEventListener("click", this.handleDisabledFormClick)
-        this.debugger.log("disableForm(): Form has been disabled");
-    }
     
-    enableForm() {
-        this.$form.style.pointerEvents = "all"
-        this.$form.style.opacity = "1"
-        this.$form.removeEventListener("click", this.handleDisabledFormClick)
-        this.debugger.log("enableForm(): Form has been enabled");
-    }
     
-    showFormFail() {
-        alert('Submission has failed! Try again in a few minutes.');
-    }
-    
-    showFormSuccess() {
-        alert('Submission has succeeded!')
-    }
-
     getGroupWrapper(groupName) {
         let $wrapper = this.$form.querySelector('['+constants.GROUP_WRAPPER_DATA_ATTRIBUTE+'="' + groupName + '"]');
         return $wrapper
     }
 
     getGroupFields(groupName) {
-        let fields = [];
+        var fields = [];
         this.eachField(field => {
             if(field.group == groupName) {
                 fields.push(field)
@@ -230,15 +195,155 @@ export default class FormValidator {
         })
         return fields
     }
+    
+
+    validate(fieldsNames=[], cb=()=>{}) {
+        let v = () => {
+            // this.resetValidation(fieldsNames)
+            this._validate(fieldsNames).then((x) => {cb(true)}).catch((x) => {cb(false)})
+        }
+        setTimeout(v,1);
+
+    }
+
+    _validate(fieldsNames=[], resultOnly=false) {
+
+        this.logger.log("validate(): Form will be validated");
+        this.events.onBeforeValidate && (this.events.onBeforeValidate(this));
+        
+        let handleValidationPromise = (resolveValidationPromise, rejectValidationPromise) => {
+            let fieldsValidationPromises = [];
 
 
-    updateDependenceRules() {
+            if(!fieldsNames.length) {
+                this.eachField((field) => {
+                    fieldsValidationPromises.push(field._validate(resultOnly))
+                }) 
+            } else {
+                fieldsNames.forEach(fieldName => {
+                    fieldsValidationPromises.push(this.fields[fieldName]._validate(resultOnly))
+                })
+            }
+            
 
-        this.debugger.log("updateDependenceRules(): Updating...", this);   
+
+            Promise.all(fieldsValidationPromises).then(() => {
+                resolveValidationPromise()
+            }).catch(() => {
+                rejectValidationPromise()
+            }).finally(() => {
+                this.events.onValidate && (this.events.onValidate(this));
+            })
+        }
+        return new Promise(handleValidationPromise);
+        
+    }
+    
+    resetValidation(fieldsNames=[]) {
+
+        if(this.submitting || this.someFieldsValidating()) {
+            return;
+        }
+        
+        if(!fieldsNames.length) {
+            this.eachField((field) => {
+                field.resetValidation();
+            }) 
+        } else {
+            fieldsNames.forEach(fieldName => {
+                this.fields[fieldName].resetValidation();
+            })
+        }
+
+        this.updateDependenceRules()
+        this.logger.log("resetForm(): Form validation has been reset");
+    }
+
+    resetForm() {
+
+        if(this.submitting || this.someFieldsValidating()) {
+            return;
+        }
+
+        this.events.onBeforeReset && (this.events.onBeforeReset(this));
+
+        this.$form.reset();
+        this.resetValidation()
+        this.deleteFormState()
+        
+        this.logger.log("resetForm(): Form has been reset");
+        this.events.onReset && (this.events.onReset(this));
+
+    }
+
+    deleteFormState() {
+        if(window.localStorage['FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id')]) {
+            delete window.localStorage['FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id')]
+        }
+        
+    }
+
+    updateFormState() {
+        window.localStorage.setItem('FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id'), JSON.stringify(this.getSerializedFormData()));
+    }
+
+    applyFormState() {
+        let storage = window.localStorage['FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id')];
+        if(storage) {
+            let serializedForm = JSON.parse(storage);
+            Object.keys(serializedForm).forEach(key => {
+                let value = serializedForm[key]
+                if(this.fields[key]) {
+                    this.fields[key].setValue(value)
+                }
+            })
+        }
+    }
+
+    handlePreventingDefault = (e) => {
+        e.preventDefault();
+    }
+    
+    disableForm() {
+        this.eachField(field => {
+            field.disableInteraction()
+        })
+        this.$form.style.opacity = "0.7"
+        this.logger.log("disableForm(): Form has been disabled");
+    }
+    
+    enableForm() {
+        this.eachField(field => {
+            field.enableInteraction()
+        })
+        this.$form.style.opacity = "1"
+        this.logger.log("enableForm(): Form has been enabled");
+    }
+
+    getDependenceRuleTargetFields(depRuleObject) {
+
+        let fields = []
+        depRuleObject.groups.forEach(groupName => {
+            let groupFields = this.getGroupFields(groupName)
+            groupFields.forEach(groupField => {
+                fields.push(groupField)
+            })
+        })
+        depRuleObject.fields.forEach(dependenceRuleFieldName => {
+            let dependentField = this.fields[dependenceRuleFieldName];
+            fields.push(dependentField)
+        })
+        return fields
+    }
+
+    updateDependenceRules(resetValueOnToggle=false) {
+
+        this.logger.log("updateDependenceRules(): Updating...", this);   
 
         Object.keys(this.fields).forEach(k => {
 
-            var field = this.fields[k]
+            var field = this.fields[k];
+            
             if(field.dependenceRules !== undefined) {
 
                 field.dependenceRules.forEach(depRuleObject => {
@@ -250,67 +355,70 @@ export default class FormValidator {
                         depRuleObject.groups = [];
                     }
 
-                    var getTargetFields = () => {
-
-                        let fields = [];
-                        //read groups
-
-                        depRuleObject.groups.forEach(groupName => {
-                            let groupFields = this.getGroupFields(groupName)
-                            groupFields.forEach(groupField => {
-                                fields.push(groupField)
-                            })
-                        })
-                        depRuleObject.fields.forEach(dependenceRuleFieldName => {
-                            let dependentField = this.fields[dependenceRuleFieldName];
-                            fields.push(dependentField)
-                        })
-                        return fields
-                    }
+                    let targetFields = this.getDependenceRuleTargetFields(depRuleObject)
 
                     let hide = () => {
 
-                        depRuleObject.groups.forEach(groupName => {
-                            let $groupWrapper = this.getGroupWrapper(groupName);
-                            if($groupWrapper) {
-                                $groupWrapper.classList.add(this.groupWrapperHiddenClass);
-                                $groupWrapper.classList.remove(this.groupWrapperVisibleClass);
-                            }
-                        })
-                        
-                        getTargetFields().forEach(targetField => {
-                            targetField.$wrapper.classList.add(this.fieldRenderPreferences.wrapperHiddenClass);
-                            targetField.$wrapper.classList.remove(this.fieldRenderPreferences.wrapperVisibleClass);
-                            targetField.disableRules()
-                            targetField.status = 1;
-                        })
+                            depRuleObject.groups.forEach(groupName => {
+                                let $groupWrapper = this.getGroupWrapper(groupName);
+                                if($groupWrapper) {
+                                    $groupWrapper.classList.add(this.groupWrapperHiddenClass);
+                                    $groupWrapper.classList.remove(this.groupWrapperVisibleClass);
+                                }
+                            })
+                            
+                            targetFields.forEach(targetField => {
+                                let renderPrefs = targetField.getFieldRenderPreferences();
+                                if(!Array.from(targetField.$wrapper.classList).includes(renderPrefs.wrapperHiddenClass)) {
+
+                                    targetField.$wrapper.classList.add(renderPrefs.wrapperHiddenClass);
+                                    targetField.$wrapper.classList.remove(renderPrefs.wrapperVisibleClass);
+                                    targetField.disableRules()
+                                    targetField.status = 1;
+                                    if(resetValueOnToggle) {
+                                        targetField.setValue('')
+                                    }
+                                }
+                            })
+
 
                     }
                     let show = () => {
-                        depRuleObject.groups.forEach(groupName => {
-                            let $groupWrapper = this.getGroupWrapper(groupName);
-                            if($groupWrapper) {
-                                $groupWrapper.classList.remove(this.groupWrapperHiddenClass)
-                                $groupWrapper.classList.add(this.groupWrapperVisibleClass)
-                            }
-                        })
+                        
+                            depRuleObject.groups.forEach(groupName => {
+                                let $groupWrapper = this.getGroupWrapper(groupName);
+                                if($groupWrapper) {
+                                    $groupWrapper.classList.remove(this.groupWrapperHiddenClass)
+                                    $groupWrapper.classList.add(this.groupWrapperVisibleClass)
+                                }
+                            })
+    
+                            targetFields.forEach(targetField => {
+                                let renderPrefs = targetField.getFieldRenderPreferences();
 
-                        getTargetFields().forEach(targetField => {
-                            targetField.$wrapper.classList.remove(this.fieldRenderPreferences.wrapperHiddenClass)
-                            targetField.$wrapper.classList.add(this.fieldRenderPreferences.wrapperVisibleClass)
-                            targetField.enableRules()
-                            targetField.status = undefined
-                        })
+                                if(Array.from(targetField.$wrapper.classList).includes(renderPrefs.wrapperHiddenClass)) {
+
+                                    targetField.$wrapper.classList.remove(renderPrefs.wrapperHiddenClass)
+                                    targetField.$wrapper.classList.add(renderPrefs.wrapperVisibleClass)
+                                    targetField.enableRules()
+                                    targetField.status = undefined
+                                    if(resetValueOnToggle) {
+                                        targetField.setValue('')
+                                    }
+                                }
+                            })
+                        
                     }
 
-                    if(DEFAULT_RULES[depRuleObject.name]) {
-                        var rule = new FormValidatorRule({...DEFAULT_RULES[depRuleObject.name], ...removeUndefinedObjectKeys(depRuleObject)})
-                    } else {
-                        var rule = new FormValidatorRule(depRuleObject)
+                    
+                    if(this.defaultRules[depRuleObject.name]) {
+                        depRuleObject = {...this.defaultRules[depRuleObject.name], ...removeUndefinedObjectKeys(depRuleObject)}
                     }
+
+                    var rule = new FormValidatorRule(depRuleObject)
 
                     let dependenceRulePromise = new Promise(function(resolve, reject) {
-                        rule.test(field.getValues(), (cb) => {
+                        rule.test(field.getValue(), (cb) => {
                             if(cb === true) {
                                 resolve()
                             } else {
@@ -319,88 +427,125 @@ export default class FormValidator {
                         })
                     })
 
-                    dependenceRulePromise.then(() => {
-                        show()
-                    }).catch(() => {
-                        hide()
-                    })
 
-                    
+                    dependenceRulePromise.then(() => {
+                        this.events.onBeforeShowDependentFields && (this.events.onBeforeShowDependentFields(targetFields));
+                        show()
+                        this.events.onShowDependentFields && (this.events.onShowDependentFields(targetFields));
+                    }).catch(() => {
+                        this.events.onBeforeHideDependentFields && (this.events.onBeforeHideDependentFields(targetFields));
+                        hide()
+                        this.events.onHideDependentFields && (this.events.onHideDependentFields(targetFields));
+                    })
 
                 })
             }
         })
     }
 
-    submit(e) {
-        
-        this.debugger.log("submit(): Form submission attempt occurred", this);
-        
-        let submit = () => {
-            this.disableForm();
-            this.debugger.log("submit(): Trying to submit form...");   
-            this.events.onBeforeSubmit && (this.events.onBeforeSubmit(this));
-            
-            this.submitted = 1;
-            
-            let handleSubmissionResult = (succeeded) => {
-                if(succeeded) {
-                    this.debugger.log("submit(): Form submission has succeeded");
-                    this.showFormSuccess();
-                    this.submitted = false;
-                    if(this.resetFormOnSubmit) {
-                        this.resetForm();
-                        this.enableForm();
-                    }
-                   
-                } else {
-                    this.debugger.logError("submit(): Form submission has failed");
-                    this.showFormFail();
-                    this.submitted = false;
-                    this.enableForm();
+
+    showLoading() {
+        if(this.showLoadingFn !== undefined) {
+            this.showLoadingFn(this)
+        }
+    }
+
+    hideLoading() {
+        if(this.hideLoadingFn !== undefined) {
+            this.hideLoadingFn(this)
+        }
+    }
+
+    getFormData() {
+        return new FormData(this.$form);
+    }
+
+    getSerializedFormData() {
+        let obj = {};
+        for (let [key, value] of this.getFormData()) {
+            if (obj[key] !== undefined) {
+                if (!Array.isArray(obj[key])) {
+                    obj[key] = [obj[key]];
                 }
-            }
-            
-            this.debugger.log("submit(): Form will be submitted");
-            if(this.submitFn) {
-                this.submitFn(this, handleSubmissionResult);
+                obj[key].push(value);
             } else {
-                this.$form.submit();
-                this.debugger.log("submit(): Form has been submitted", this);
+                obj[key] = value;
             }
-            
         }
-        
-        if(this.submitted === 1) {
-            return;
+        return obj;
+
+    }
+
+    submit(e) {
+
+        this.events.onBeforeSubmit && (this.events.onBeforeSubmit(this));
+
+        let _dontSubmit = () => {
+            this.submitting = false
+            this.logger.log("initField(): Form can't be submitted", this); 
+            this.events.onSubmitFail && (this.events.onSubmitFail(this));
+
         }
-        
-        if(this.allFieldsValid()) {
-            submit();
-        } else {
-            this.disableForm();
-            this.validate().then(() => {
-                submit();
-            }).catch(() => {
-                let firstInvalidField = undefined;
-                Object.keys(this.fields).every((k) => {
-                    let field = this.fields[k];
-                    if(field.status === 0) {
-                        firstInvalidField = field;
-                        return false;
+        let _submit = () => {
+            this.logger.log("initField(): Submitting form", this); 
+
+            if(this.submitFn) {
+                this.showLoading();
+                this.disableForm();
+
+                let handleSubmissionResult = result => {
+                    let formData = new FormData(this.$form);
+                    this.submitting = false
+                    this.hideLoading();
+                    this.enableForm();
+                    this.resetForm();
+                    if(result) {
+                        this.events.onSubmit && (this.events.onSubmit(this));
+                    } else {
+                        _dontSubmit()
                     }
-                })
-
-                this.debugger.log("submit(): Form can't be submitted because one or more fields are invalid", this);
-                this.enableForm();
-
-                if(firstInvalidField !== undefined) {
-                    firstInvalidField.fields[0].focus();
                 }
-
-            })
+                this.submitFn(this, handleSubmissionResult)
+            } else {
+                this.submitting = false;
+                this.hideLoading();
+                this.events.onBeforeSubmit && (this.events.onBeforeSubmit(this));
+                this.$form.submit()
+                deleteFormState()
+                this.events.onSubmit && (this.events.onSubmit(this));
+            }
         }
-        
+
+        // Process
+
+        if(this.getFirstInvalidField()) {
+            this.getFirstInvalidField().fields[0].focus()
+        }
+
+        if(this.submitting === true || this.someFieldsValidating()) {
+            return;
+        } else {
+            this.submitting = true
+
+            if(this.allFieldsValid()) {
+                _submit()
+            } else {
+
+                this._validate().then(() => {
+                    if(this.allFieldsValid()) {
+                        _submit()
+                    } else {
+                        _dontSubmit()
+                    }
+                }).catch(() => {
+                    if(this.getFirstInvalidField()) {
+                        this.getFirstInvalidField().fields[0].focus()
+                    }
+                    _dontSubmit()
+                })
+            }
+
+        }
         
     }
     

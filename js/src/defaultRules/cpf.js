@@ -1,12 +1,12 @@
 
-
 export default {
-    name: 'fullName',
+    name: 'cpf',
     parameter: null,
-    message: 'Digite seu nome completo',
+    message: 'CPF inválido',
     async: false,
     fn: (values, parameter) => {
-        let exp =  new RegExp(/^([\w]{3,})+\s+([\w\s]{3,})+$/i);
+        
+        var exp =  /^((\d{3}).(\d{3}).(\d{3})-(\d{2}))*$/;
         return exp.test(values)
     }
 }

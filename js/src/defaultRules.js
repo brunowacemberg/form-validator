@@ -8,6 +8,9 @@ import email from './defaultRules/email';
 import fullName from './defaultRules/fullName';
 import equal from './defaultRules/equal';
 import hasValues from './defaultRules/hasValues';
+import cpf from './defaultRules/cpf';
+import date from './defaultRules/date';
+import phone from './defaultRules/phone';
 
 export default {
   required,
@@ -18,5 +21,8 @@ export default {
   fullName,
   equal,
   hasValues,
+  cpf,
+  date,
+  phone,
   length
 }

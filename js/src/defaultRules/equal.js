@@ -2,9 +2,9 @@
 
 export default {
 
-    name: 'email',
+    name: 'equal',
     parameter: null,
-    message: "Invalid email address",
+    message: "Campo inválido",
     async: false,
     fn: (values, parameter) => {
         let isEqual = true;

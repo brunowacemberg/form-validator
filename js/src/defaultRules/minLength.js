@@ -2,7 +2,7 @@ export default {
 
     name: 'minLength',
     parameter: null,
-    message: "Value is too small",
+    message: "Valor pequeno demais",
     async: false,
     fn: (values, parameter) => {
         !parameter && (cb(true));

@@ -1,10 +1,12 @@
 export default {
     name: 'regex',
     parameter: null,
-    message: 'Invalid value',
+    message: 'Valor inválido',
     async: false,
     fn: (values, parameter) => {
-        !parameter && (cb(true));
+        if(!parameter) {
+            return true
+        }
         let allValid = true;
         var exp =  new RegExp(parameter);
         values.forEach(value => {

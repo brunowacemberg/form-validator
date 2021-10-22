@@ -1,4 +1,4 @@
-class Debugger {
+class Logger {
 
     constructor(debug=false) {
         
@@ -30,4 +30,4 @@ class Debugger {
 }
 
 
-export default Debugger
+export default Logger

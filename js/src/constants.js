@@ -3,13 +3,13 @@ const GROUP_WRAPPER_DATA_ATTRIBUTE = 'data-form-validator-group-wrapper';
 const DEFAULT_OPTIONS = {
 
     debug: false,
-    validateFieldOnBlur: true,
+    enableDataRestore: false, // will be deleted on form submission or reset
     resetFieldValidationOnChange: true,
-    resetFormOnSubmit: true,
+    validateFieldOnInput: false,
+    validateFieldOnBlur: false,
 
     groupWrapperHiddenClass: "d-none",
     groupWrapperVisibleClass: "d-block",
-        
 
     fieldRenderPreferences: {
         wrapperClass: "form-group",
@@ -26,12 +26,12 @@ const DEFAULT_OPTIONS = {
         wrapperValidatingClass: "is-validating",
         
         // "Valid" field state
-        showValidMessage: true,
+        showValidMessage: false,
         validMessage: "Field is valid",
         validMessageHTML: "<div class=\"valid-feedback text-success d-block\">{{message}}</div>",
-        addValidClass: true,
+        addValidClass: false,
         validClass: "is-valid",
-        addWrapperValidClass: true,
+        addWrapperValidClass: false,
         wrapperValidClass: "is-valid",
         
         // "Invalid" field state (message will come from first unmatched rule)
@@ -45,61 +45,29 @@ const DEFAULT_OPTIONS = {
     },
     
     fields: [
-
-        // {
-        //     id: "field_name", // my be array if tyoe radio (equal names, different ids, same value)
-        //     group: "personalData",
-        //     helpText: "Seu nome",
-        //     rules: ["required"],
-            
-        // },
-        // {
-        //     id: "field_email", // my be array if tyoe radio (equal names, different ids, same value)
-        //     group: "personalData",
-        //     helpText: "Seu email",
-        //     rules: ["required", "email", "userExists"],
-        //     events: {
-        //         onBeforeFieldValidate: function(field) {
-        //             console.log("onBeforeFieldValidate específico da field", field)
-        //         },
-
-        //     },
-        //     fieldRenderPreferences: {
-        //         showFieldValidMessage: true,
-        //         showFieldValidatingMessage: false
-        //     }
-        // },
-        // {
-        //     id: "field_phoneNumber", // my be array if tyoe radio (equal names, different ids, same value)
-        //     group: "personalData",
-        //     helpText: "Digite aqui algum número para falarmos com você",
-        //     rules: [
-        //         {
-        //             name: 'minLength',
-        //             parameter: 1
-        //         },
-        //         {
-        //             name: 'maxLength',
-        //             parameter: 2
-        //         }
-        //     ]
-        // }
-
     ],
 
-    submit: undefined,
-    // submit: function(validator, cb) {
-        
-    //     setTimeout(function() {
-    //         cb(true)
-    //     }, 3000)
-    // },
+
+    showLoadingFn: undefined, // returns instance
+    hideLoadingFn: undefined, // returns instance
+    submitFn: undefined, // returns instance
 
     events: {   
+        onInit: undefined,
+        onBeforeReset: undefined,
+        onReset: undefined,
         onBeforeSubmit: undefined,
+        onSubmitFail: undefined,
         onSubmit: undefined,
-        onBeforeFieldValidate: undefined,
-        onFieldValidate: undefined,
+        onBeforeValidate: undefined,
+        onValidate: undefined,
+        onBeforeValidateField: undefined,
+        onValidateField: undefined,
+        onFieldInput: undefined,
+        onBeforeShowDependentFields: undefined,
+        onShowDependentFields: undefined,
+        onBeforeHideDependentFields: undefined,
+        onHideDependentFields: undefined
     }
 
 } 

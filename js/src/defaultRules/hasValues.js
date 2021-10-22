@@ -4,14 +4,17 @@ export default {
 
     name: 'hasValues',
     parameter: null,
-    message: "Field doesn't have needed values",
+    message: "Campo inválido",
     async: false,
     fn: (values, parameter) => {
-        let hasValues = false;
+        let hasValues = true;
         if(typeof parameter === "object") {
+            if(parameter.length === 0) {
+                hasValues = false;
+            }
             parameter.forEach(p => {
-                if(values.includes(p)) {
-                    hasValues = true;
+                if(!values.includes(p)) {
+                    hasValues = false;
                 }
             })
         } else {
