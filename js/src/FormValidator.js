@@ -3,6 +3,8 @@ import DEFAULT_RULES from './defaultRules'
 import FormValidatorRule from './FormValidatorRule';
 import FormValidatorField from './FormValidatorField';
 import Logger from './Logger';
+import { deepSpread } from 'deep-spread';
+
 
 const removeUndefinedObjectKeys = (obj) => {
     Object.keys(obj).forEach(key => {
@@ -15,13 +17,14 @@ const removeUndefinedObjectKeys = (obj) => {
 
 export default class FormValidator {
     
-    constructor(formId, options) {
+    constructor(formId, options={}) {
             
         this.logger = new Logger(options.debug);
 
         this.logger.log("constructor(): New validator instance");
         this.formId = formId;
-        this.options = {...constants.DEFAULT_OPTIONS, ...options};
+
+        this.options = deepSpread(options, constants.DEFAULT_OPTIONS);;
         
         if(!document.getElementById(formId)) {
             this.logger.logError("constructor(): Couldn't find form element \"#"+formId+"\"");
@@ -46,16 +49,14 @@ export default class FormValidator {
         
     }
 
-    destroy() {
-        this.logger.log("destroy(): Destroying validator...");    
-        
-    }
 
     init() {
         this.logger.log("init(): Initializing validator...");   
 
         this.$form = document.getElementById(this.formId);
+        
         this.fieldRenderPreferences = this.options.fieldRenderPreferences;
+
         this.events = this.options.events;
         this.validateFieldOnBlur = this.options.validateFieldOnBlur;
         this.validateFieldOnInput = this.options.validateFieldOnInput;
@@ -69,70 +70,90 @@ export default class FormValidator {
         this.submitting = false;
         this.fields = {};
         this.defaultRules = DEFAULT_RULES;
+        this._repeatables = {};
         
-        this.logger.log("initField(): Initializing fields..."); 
+        this.logger.log("init(): Registering fields..."); 
 
-        this.options.fields.forEach(_fieldObject => {
-
-            var _validator = this;
-
-            var initField = (fieldObject) => {
-
-                fieldObject._validator = _validator;
-                this.fields[fieldObject.name] = new FormValidatorField(fieldObject, this.logger.showLogs);
-            }
-
-            if(typeof _fieldObject.name === "object") {
-                _fieldObject.name.forEach(fieldName => {
-                    let obj = _fieldObject;
-                    obj.name = fieldName;
-                    initField(obj);
-                })
-            } else {
-                let obj = _fieldObject;
-                initField(obj);
-            }
-
+        this.options.fields.forEach(fieldObject => {
+            this.registerField(fieldObject);
         }) 
 
-        this.$form.addEventListener('submit', (e) => {
+        var handleFormSubmit = (e) => {
             e.preventDefault();
             this.submit(e)
-        })
+        }
+        this.$form.addEventListener('submit', handleFormSubmit)
 
-        this.$form.addEventListener('change', (e) => {
-            
+        var handleFormChange = (e) => {
             if(this.enableDataRestore) {
                 this.updateFormState();
-                
             }
-            
-            this.updateDependenceRules(true)
-        })
+            this.updateDependencyRules(true)
+        }
+        this.$form.addEventListener('change', handleFormChange)
 
         
         this._options = this.options;
         delete this.options
         delete this.formId
         
-        this.updateDependenceRules()
         
         if(this.enableDataRestore) {
             this.applyFormState();
-            
-            this._validate([], true).then(() => {}).catch(() => {}).finally(() => {
-                this.updateDependenceRules();
-
-            })
-
+            this.updateFormState()
         }
+
+        this.updateDependencyRules()
+
         
         this.events.onInit && (this.events.onInit(this));
+  
 
         this.logger.log("init(): Validator has been initialized", this);   
 
+
+        this.destroy = () => {
+            this.logger.log("destroy(): Destroying validator...");    
+            this.deleteFormState();
+            this.resetValidation();
+            this.eachField((field) => {
+                field.unregister()
+            })            
+            this.$form.removeEventListener('submit', handleFormSubmit)
+            this.$form.removeEventListener('change', handleFormChange)
+
+        }
+
     }
     
+    registerField(fieldObject) {
+
+        if(this.fields[fieldObject.name]) {
+            this.unregisterField(fieldObject.name)
+        }
+
+        var _validator = this;
+
+        var _registerField = (obj) => {
+            obj._validator = _validator;
+            this.fields[obj.name] = new FormValidatorField(obj, this.logger.showLogs);
+        }
+
+        if(typeof fieldObject.name === "object") {
+            fieldObject.name.forEach(fieldName => {
+                let obj = fieldObject;
+                obj.name = fieldName;
+                _registerField(obj);
+            })
+        } else {
+            let obj = fieldObject;
+            _registerField(obj);
+        }
+    }
+
+    unregisterField(fieldName) {
+        this.fields[fieldName].unregister()
+    }
 
     eachField(fn) {
 
@@ -142,18 +163,18 @@ export default class FormValidator {
         
     }
     
-    allFieldsValid(fieldsNames=[]) {
+    isValid(fieldsNames=[]) {
         let hasInvalidField = false;
 
         if(!fieldsNames.length) {
             this.eachField((field) => {
-                if(field.status !== 1) {
+                if(field._status !== 1) {
                     hasInvalidField = true;
                 }
             }) 
         } else {
             fieldsNames.forEach(fieldName => {
-                if(this.fields[fieldName].status !== 1) {
+                if(this.fields[fieldName]._status !== 1) {
                     hasInvalidField = true;
                 }
             })
@@ -176,18 +197,15 @@ export default class FormValidator {
         return firstInvalidField
     }
 
-
-    someFieldsValidating() {
-        let someFieldsValidating = false;
+    isValidating() {
+        let isValidating = false;
         this.eachField(field => {
             if(field.status === -1) {
-                someFieldsValidating = true;
+                isValidating = true;
             }
         })
-        return someFieldsValidating
+        return isValidating
     }
-    
-    
     
     getGroupWrapper(groupName) {
         let $wrapper = this.$form.querySelector('['+constants.GROUP_WRAPPER_DATA_ATTRIBUTE+'="' + groupName + '"]');
@@ -203,7 +221,7 @@ export default class FormValidator {
         })
         return fields
     }
-    
+
 
     validate(fieldsNames=[], cb=()=>{}) {
         let v = () => {
@@ -214,7 +232,7 @@ export default class FormValidator {
 
     }
 
-    _validate(fieldsNames=[], resultOnly=false) {
+    _validate(fieldsNames=[], silentMode=false) {
 
         this.logger.log("validate(): Form will be validated");
         this.events.onBeforeValidate && (this.events.onBeforeValidate(this));
@@ -225,11 +243,11 @@ export default class FormValidator {
 
             if(!fieldsNames.length) {
                 this.eachField((field) => {
-                    fieldsValidationPromises.push(field._validate(resultOnly))
+                    fieldsValidationPromises.push(field._validate(silentMode))
                 }) 
             } else {
                 fieldsNames.forEach(fieldName => {
-                    fieldsValidationPromises.push(this.fields[fieldName]._validate(resultOnly))
+                    fieldsValidationPromises.push(this.fields[fieldName]._validate(silentMode))
                 })
             }
             
@@ -249,7 +267,7 @@ export default class FormValidator {
     
     resetValidation(fieldsNames=[]) {
 
-        if(this.submitting || this.someFieldsValidating()) {
+        if(this.submitting || this.isValidating()) {
             return;
         }
         
@@ -263,13 +281,13 @@ export default class FormValidator {
             })
         }
 
-        this.updateDependenceRules()
+        this.updateDependencyRules()
         this.logger.log("resetForm(): Form validation has been reset");
     }
 
     resetForm() {
 
-        if(this.submitting || this.someFieldsValidating()) {
+        if(this.submitting || this.isValidating()) {
             return;
         }
 
@@ -278,6 +296,15 @@ export default class FormValidator {
         this.$form.reset();
         this.resetValidation()
         this.deleteFormState()
+
+        if(this._repeatables) {
+            Object.keys(this._repeatables).forEach((repeatableInstanceIdentifier) => {
+                let repetitionAmount = this._repeatables[repeatableInstanceIdentifier]
+                for(let i=0; i<repetitionAmount; i++) {
+                    this.removeRepeatable(repeatableInstanceIdentifier, i)
+                }
+            })
+        }
         
         this.logger.log("resetForm(): Form has been reset");
         this.events.onReset && (this.events.onReset(this));
@@ -292,19 +319,39 @@ export default class FormValidator {
     }
 
     updateFormState() {
-        window.localStorage.setItem('FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id'), JSON.stringify(this.getSerializedFormData()));
+        window.localStorage.setItem('FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id'), JSON.stringify({
+            "data": this.getSerializedFormData(),
+            "repeatables": this._repeatables
+        }));
     }
 
     applyFormState() {
-        let storage = window.localStorage['FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id')];
-        if(storage) {
-            let serializedForm = JSON.parse(storage);
+        let _storage = window.localStorage['FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id')];
+
+        if(_storage) {
+            let storage = JSON.parse(_storage);
+
+
+            if(storage.repeatables) {
+                Object.keys(storage.repeatables).forEach((repeatableInstanceIdentifier) => {
+                    let repetitionAmount = storage.repeatables[repeatableInstanceIdentifier]
+                    for(let i=0; i<repetitionAmount; i++) {
+                        this.addRepeatable(repeatableInstanceIdentifier, false)
+                    }
+                })
+            }
+
+            let serializedForm = storage.data;
+
             Object.keys(serializedForm).forEach(key => {
                 let value = serializedForm[key]
                 if(this.fields[key]) {
                     this.fields[key].setValue(value)
                 }
             })
+
+            this.validate()
+
         }
     }
 
@@ -328,8 +375,7 @@ export default class FormValidator {
         this.logger.log("enableForm(): Form has been enabled");
     }
 
-    getDependenceRuleTargetFields(depRuleObject) {
-
+    getDependencyRuleTargetFields(depRuleObject) {
         let fields = []
         depRuleObject.groups.forEach(groupName => {
             let groupFields = this.getGroupFields(groupName)
@@ -337,24 +383,24 @@ export default class FormValidator {
                 fields.push(groupField)
             })
         })
-        depRuleObject.fields.forEach(dependenceRuleFieldName => {
-            let dependentField = this.fields[dependenceRuleFieldName];
+        depRuleObject.fields.forEach(dependencyRuleFieldName => {
+            let dependentField = this.fields[dependencyRuleFieldName];
             fields.push(dependentField)
         })
         return fields
     }
 
-    updateDependenceRules(resetValueOnToggle=false) {
+    updateDependencyRules(resetValueOnToggle=false) {
 
-        this.logger.log("updateDependenceRules(): Updating...", this);   
+        this.logger.log("updateDependencyRules(): Updating...", this);   
 
         Object.keys(this.fields).forEach(k => {
 
             var field = this.fields[k];
             
-            if(field.dependenceRules !== undefined) {
+            if(field.dependencyRules !== undefined) {
 
-                field.dependenceRules.forEach(depRuleObject => {
+                field.dependencyRules.forEach(depRuleObject => {
 
                     if(!depRuleObject.fields){
                         depRuleObject.fields = [];
@@ -363,7 +409,7 @@ export default class FormValidator {
                         depRuleObject.groups = [];
                     }
 
-                    let targetFields = this.getDependenceRuleTargetFields(depRuleObject)
+                    let targetFields = this.getDependencyRuleTargetFields(depRuleObject)
 
                     let hide = () => {
 
@@ -423,20 +469,10 @@ export default class FormValidator {
                         depRuleObject = {...this.defaultRules[depRuleObject.name], ...removeUndefinedObjectKeys(depRuleObject)}
                     }
 
+
                     var rule = new FormValidatorRule(depRuleObject)
 
-                    let dependenceRulePromise = new Promise(function(resolve, reject) {
-                        rule.test(field.getValue(), (cb) => {
-                            if(cb === true) {
-                                resolve()
-                            } else {
-                                reject()
-                            }
-                        })
-                    })
-
-
-                    dependenceRulePromise.then(() => {
+                    rule.test(field.getValue()).then(() => {
                         this.events.onBeforeShowDependentFields && (this.events.onBeforeShowDependentFields(targetFields));
                         show()
                         this.events.onShowDependentFields && (this.events.onShowDependentFields(targetFields));
@@ -486,75 +522,179 @@ export default class FormValidator {
 
     submit(e) {
 
-        this.events.onBeforeSubmit && (this.events.onBeforeSubmit(this));
 
-        let _dontSubmit = () => {
-            this.submitting = false
-            this.logger.log("initField(): Form can't be submitted", this); 
-            this.events.onSubmitFail && (this.events.onSubmitFail(this));
-
-        }
         let _submit = () => {
-            this.logger.log("initField(): Submitting form", this); 
+
+            this.events.onBeforeSubmit && (this.events.onBeforeSubmit(this));
+            
+            this.logger.log("submit(): Submitting form", this); 
+
+            this.showLoading();
 
             if(this.submitFn) {
-                this.showLoading();
+                
                 this.disableForm();
 
-                let handleSubmissionResult = result => {
-                    let formData = new FormData(this.$form);
+                let handleSubmissionCallback = callback => {
                     this.submitting = false
                     this.hideLoading();
-                    this.enableForm();
-                    this.resetForm();
-                    if(result) {
+                    if(callback) {
                         this.events.onSubmit && (this.events.onSubmit(this));
+                        this.resetForm();
                     } else {
-                        _dontSubmit()
+                        this.submitting = false
+                        this.logger.log("submit(): Form can't be submitted", this); 
+                        this.events.onSubmitFail && (this.events.onSubmitFail(this));
                     }
+                    this.enableForm();
+                    
                 }
-                this.submitFn(this, handleSubmissionResult)
+                this.submitFn(this, handleSubmissionCallback)
+                
             } else {
                 this.submitting = false;
                 this.hideLoading();
-                this.events.onBeforeSubmit && (this.events.onBeforeSubmit(this));
                 this.$form.submit()
-                deleteFormState()
                 this.events.onSubmit && (this.events.onSubmit(this));
+                this.resetForm();
             }
         }
 
         // Process
 
+        this.events.onTrySubmit && (this.events.onTrySubmit(this));
+
         if(this.getFirstInvalidField()) {
-            this.getFirstInvalidField().fields[0].focus()
+            this.getFirstInvalidField().elements[0].focus()
         }
 
-        if(this.submitting === true || this.someFieldsValidating()) {
+        
+        if(this.submitting === true || this.isValidating()) {
             return;
         } else {
             this.submitting = true
 
-            if(this.allFieldsValid()) {
-                _submit()
-            } else {
-
-                this._validate().then(() => {
-                    if(this.allFieldsValid()) {
-                        _submit()
-                    } else {
-                        _dontSubmit()
-                    }
-                }).catch(() => {
-                    if(this.getFirstInvalidField()) {
-                        this.getFirstInvalidField().fields[0].focus()
-                    }
-                    _dontSubmit()
-                })
-            }
+            this._validate().then(() => {
+                if(this.isValid()) {
+                    _submit()
+                } else {
+                    this.submitting = false
+                }
+            }).catch(() => {
+                this.submitting = false
+                if(this.getFirstInvalidField()) {
+                    this.getFirstInvalidField().elements[0].focus()
+                }
+            })
+        
 
         }
         
+    }
+
+
+    getNodeChildrenFieldsNames($wrapper) {
+        
+        let _fields = {};
+        let fields = [];
+
+        Array.from($wrapper.querySelectorAll('['+constants.INITIALIZED_FIELD_DATA_ATTRIBUTE+']')).forEach(node => {
+            if(node.hasAttribute('name') && this.fields[node.getAttribute('name')]) {
+                _fields[node.getAttribute('name')] = true;
+            }
+        })
+
+
+        Object.keys(_fields).forEach((fieldName) => {
+            fields.push(fieldName)
+        })
+
+        return fields
+
+    }
+
+
+    addRepeatable(repeatableIdentifier, clearValue=true) { 
+        
+        var $repeatableWrapper = document.querySelector('['+constants.REPEATABLE_WRAPPER_DATA_ATTRIBUTE+'="'+repeatableIdentifier+'"]');
+        var $firstItem = $repeatableWrapper.querySelectorAll('['+constants.REPEATABLE_ITEM_DATA_ATTRIBUTE+']')[0];
+        var itemsCount = $repeatableWrapper.querySelectorAll('['+constants.REPEATABLE_ITEM_DATA_ATTRIBUTE+']').length;
+        
+        var limit = Number($repeatableWrapper.getAttribute(constants.REPEATABLE_LIMIT_DATA_ATTRIBUTE));
+        if(limit > 1 && itemsCount >= limit) {
+            return
+        }
+
+        this._repeatables[repeatableIdentifier] = itemsCount;
+
+        let repeatingFieldsNames = this.getNodeChildrenFieldsNames($firstItem);
+        
+        let revalidatingFieldsNames = [];
+        repeatingFieldsNames.forEach(fieldName => {
+            if(this.fields[fieldName]._status === 0 || this.fields[fieldName]._status === 1 || this.fields[fieldName]._status === -1) {
+                revalidatingFieldsNames.push(fieldName)
+                this.fields[fieldName].removeValidationElements();
+                this.fields[fieldName].enableInteraction();
+            }
+        })
+
+        let $clone = $firstItem.cloneNode(true);
+        
+        revalidatingFieldsNames.forEach(fieldName => {
+            this.fields[fieldName].validate();
+        })
+
+        repeatingFieldsNames
+        repeatingFieldsNames.forEach((fieldName) => {
+            let nodes = $clone.querySelectorAll('[name="'+fieldName+'"]');
+            
+            nodes.forEach(node => {
+                node.setAttribute('name', node.getAttribute('name')+itemsCount)
+            })
+
+            $repeatableWrapper.appendChild($clone);
+            let field = this.registerField({
+                ...this.fields[fieldName],
+                name: fieldName+itemsCount,
+            });
+            if(clearValue) {
+                this.fields[fieldName+itemsCount].setValue('');
+            }
+            this.fields[fieldName+itemsCount].resetValidation();
+            
+        })
+        
+
+    }
+
+    removeRepeatable(repeatableIdentifier, repeatableNumber=-1) {
+
+        var $repeatableWrapper = document.querySelector('['+constants.REPEATABLE_WRAPPER_DATA_ATTRIBUTE+'="'+repeatableIdentifier+'"]');
+        var repeatableItems = $repeatableWrapper.querySelectorAll('['+constants.REPEATABLE_ITEM_DATA_ATTRIBUTE+']');
+
+        if(repeatableItems.length <= 1) {
+            return 
+        }       
+        let repeatingFieldsNames;
+
+        if(repeatableNumber !== -1) {
+            repeatableNumber = Number(repeatableNumber);
+        } else {
+            repeatableNumber = repeatableItems.length-1;
+        }
+        
+        repeatingFieldsNames = this.getNodeChildrenFieldsNames(repeatableItems[repeatableNumber]);
+        repeatingFieldsNames.forEach(fieldName => {
+            this.unregisterField(fieldName)
+        })
+
+        repeatableItems[repeatableNumber].remove()
+        this._repeatables[repeatableIdentifier] = this._repeatables[repeatableIdentifier]-1;
+        if(this._repeatables[repeatableIdentifier] < 1) {
+            delete this._repeatables[repeatableIdentifier]
+        }
+        this.updateFormState()
+
     }
     
 }

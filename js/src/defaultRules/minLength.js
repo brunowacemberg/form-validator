@@ -4,9 +4,11 @@ export default {
     parameter: null,
     message: "Valor pequeno demais",
     async: false,
-    fn: (values, parameter) => {
-        !parameter && (cb(true));
-        return (values.length >= parameter)
+    fn: (value, parameter) => {
+        if(!parameter) {
+            return true;
+        } 
+        return (value.length >= parameter)
     }
 
 }
