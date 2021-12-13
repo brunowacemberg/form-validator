@@ -1,6 +1,9 @@
+import constants from './constants';
 import FormValidatorRule from './FormValidatorRule';
 import Logger from './Logger';
 import VMasker from 'vanilla-masker';
+import { deepSpread } from 'deep-spread';
+
 
 const parseHTML = (htmlString) => {
     const parser = new DOMParser();
@@ -37,7 +40,7 @@ export default class FormValidatorField {
 
         this.logger = new Logger(debug);
 
-        if(!document.getElementsByName(fieldObject.name).length) {
+        if(!fieldObject._validator.$form.querySelectorAll('[name="'+fieldObject.name+'"]').length) {
             return;
         }
 
@@ -45,11 +48,11 @@ export default class FormValidatorField {
 
         this.name = fieldObject.name;
         this.group = fieldObject.group;
-        this.fields = Array.from(document.getElementsByName(fieldObject.name));
+        this.elements = Array.from(fieldObject._validator.$form.querySelectorAll('[name="'+fieldObject.name+'"]'));
         
         this.interactive = fieldObject.interactive;
         this.mask = fieldObject.mask;
-        this.dependenceRules = fieldObject.dependenceRules;
+        this.dependencyRules = fieldObject.dependencyRules;
         this.useRules = true;
         
         this.rules = fieldObject.rules || [];
@@ -59,18 +62,18 @@ export default class FormValidatorField {
         this.validateFieldOnInput = fieldObject.validateFieldOnInput;
         this.validateFieldOnBlur = fieldObject.validateFieldOnBlur;
         
-        this.init();
+        this.register();
         
     }
 
 
     getFieldRenderPreferences() {
-        let fieldRenderPreferences
+        let fieldRenderPreferences = this._validator.fieldRenderPreferences;
+        
         if(this.fieldRenderPreferences !== undefined) {
-            fieldRenderPreferences = {...this._validator.fieldRenderPreferences, ...removeUndefinedObjectKeys(this.fieldRenderPreferences)}
-        } else {
-            fieldRenderPreferences = this._validator.fieldRenderPreferences
+            fieldRenderPreferences = deepSpread(this.fieldRenderPreferences, this._validator.fieldRenderPreferences);
         }
+        
         return fieldRenderPreferences
     }
 
@@ -111,46 +114,63 @@ export default class FormValidatorField {
     }
 
 
-    destroy() {
-
-
-    }
-
-
-    init() {
+    register() {
         
+        if(this.registered) {
+            return
+        }
+
+        var unregisterFns = [];
+
+        this.registered = true;
         this.status = undefined;
+        this._status = undefined;
         this.message = undefined;
         this.validationElements = [];
 
         var fieldRenderPreferences = this.getFieldRenderPreferences()
         if(fieldRenderPreferences.wrapperClass && fieldRenderPreferences.wrapperClass.length) {
-            this.$wrapper = this.fields[0].closest('.'+fieldRenderPreferences.wrapperClass)
+            this.$wrapper = this.elements[0].closest('.'+fieldRenderPreferences.wrapperClass)
         } else {
             this.$wrapper = undefined
         }
         
         let events = this.getEvents()
-        this.fields.forEach($field => {
-            $field.addEventListener('input', (e) => {
+        this.elements.forEach($field => {
+
+            $field.setAttribute(constants.INITIALIZED_FIELD_DATA_ATTRIBUTE, "true");
+            
+            if($field.hasAttribute("readonly")) {
+                $field.setAttribute("data-originally-readonly", "")
+            }
+
+            let handleFieldInput = (e) => {
+                this._validator.events.onChange && (this._validator.events.onChange(this._validator));
+
                 this.status = undefined;
-                (events && events.onFieldInput) && (events.onFieldInput(this));
+                this._status = undefined;
 
                 if(this.getResetFieldValidationOnChange()) {
                     this.resetValidation();
                     $field.focus()
                 }
             
-            })
-        })
-        
+                if(this.getValidateFieldOnInput()) {
+                    let validate = () => {
+                        this._validate().then((message) => {
+                        }).catch((message) => {
+                        }).finally(() => {
+                            $field.focus()
+                        })
+                    }
+                    validate()
+                }
 
-        this.fields.forEach($field => {
+                (events && events.onFieldInput) && (events.onFieldInput(this));
 
-            if($field.hasAttribute("readonly")) {
-                $field.setAttribute("data-originally-readonly", "")
             }
 
+            $field.addEventListener('input', handleFieldInput);        
 
             let eventName = 'blur';
             if($field.getAttribute("type") === "radio" || $field.getAttribute("type") === "checkbox") {
@@ -158,7 +178,7 @@ export default class FormValidatorField {
             }
 
             var timeout;
-            $field.addEventListener(eventName, () => {
+            let handleFieldValidationOnBlur = () => {
 
                 if(this.getValidateFieldOnBlur()) {
 
@@ -170,7 +190,7 @@ export default class FormValidatorField {
                         this._validate().then((message) => {
                         }).catch((message) => {
                         }).finally(() => {
-                            this._validator.updateDependenceRules()
+                            this._validator.updateDependencyRules()
                             if(eventName === 'change') {
                                 $field.focus()
                             }
@@ -181,37 +201,43 @@ export default class FormValidatorField {
                     timeout = setTimeout(validate, 1)
 
                 }
+            }
+
+            $field.addEventListener(eventName, handleFieldValidationOnBlur)
+
+            unregisterFns.push(() => {
+                $field.removeEventListener('input', handleFieldInput);
+                $field.removeEventListener(eventName, handleFieldValidationOnBlur);
+                $field.removeAttribute(constants.INITIALIZED_FIELD_DATA_ATTRIBUTE);
             })
 
-
-            $field.addEventListener("input", () => {
-                
-                if(this.getValidateFieldOnInput()) {
-                    let validate = () => {
-                        this._validate().then((message) => {
-                        }).catch((message) => {
-                        }).finally(() => {
-                            $field.focus()
-                        })
-                    }
-                    validate()
-                }
-            })
 
         })
-
 
         if(this.mask) {
             this.setMask(this.mask)
         }
 
+        this.unregister = () => {
+            this.resetValidation();
+            unregisterFns.forEach(fn => {
+                fn()
+            })
+            this.unsetMask()
+            this.registered = false;
+
+            delete this._validator.fields[this.name]
+        }
+
+        return this
+    
     }
 
     getValue() {
-        if(this.fields.length > 1) { // radio or checkbox
+        if(this.elements.length > 1) { // radio or checkbox
             let value = [];
-            if(this.fields[0].getAttribute("type") === "radio" || this.fields[0].getAttribute("type") === "checkbox") {
-                this.fields.forEach($field => {
+            if(this.elements[0].getAttribute("type") === "radio" || this.elements[0].getAttribute("type") === "checkbox") {
+                this.elements.forEach($field => {
                     if($field.checked) {
                         value.push($field.value)
                     }
@@ -219,7 +245,7 @@ export default class FormValidatorField {
             }
             return value
         } else {
-            return this.fields[0].value
+            return this.elements[0].value
         }
         
     }
@@ -227,7 +253,7 @@ export default class FormValidatorField {
     setValue(value) {
 
         if(typeof value === "object") {
-            this.fields.forEach(($field, i) => {
+            this.elements.forEach(($field, i) => {
                 if($field.hasAttribute('readonly') || $field.hasAttribute('disabled')) {
                     return;
                 }
@@ -242,7 +268,7 @@ export default class FormValidatorField {
                 }
             })
         } else {
-            this.fields.forEach(($field, i) => {
+            this.elements.forEach(($field, i) => {
                 if($field.hasAttribute('readonly') || $field.hasAttribute('disabled')) {
                     return;
                 }
@@ -258,7 +284,7 @@ export default class FormValidatorField {
             })
         }
 
-        this._validator.updateDependenceRules();
+        this._validator.updateDependencyRules();
         
     }
 
@@ -274,9 +300,17 @@ export default class FormValidatorField {
         let rules = []
         this.rules.forEach(ruleObject => {
             if(typeof ruleObject === "string") {
-                ruleObject = {
-                    name: ruleObject
+                if(ruleObject.indexOf(":") !== -1) {
+                    ruleObject = {
+                        name: ruleObject.split(":")[0],
+                        parameter: ruleObject.split(":")[1]
+                    }
+                } else {
+                    ruleObject = {
+                        name: ruleObject
+                    }
                 }
+                
             }
             if(this._validator.defaultRules[ruleObject.name]) {
                 ruleObject = {...this._validator.defaultRules[ruleObject.name], ...removeUndefinedObjectKeys(ruleObject)}
@@ -288,10 +322,14 @@ export default class FormValidatorField {
     }
 
     setMask(pattern) {
-        if(VMasker(this.fields)) {
-            VMasker(this.fields).unMask(); 
+        this.unsetMask()
+        VMasker(this.elements).maskPattern(pattern);
+    }
+
+    unsetMask() {
+        if(VMasker(this.elements)) {
+            VMasker(this.elements).unMask(); 
         }
-        VMasker(this.fields).maskPattern(pattern);
     }
 
     handlePreventingDefault(e) {
@@ -300,7 +338,7 @@ export default class FormValidatorField {
 
     // Enable/disable field interaction
     disableInteraction() {
-        this.fields.forEach($field => {
+        this.elements.forEach($field => {
         
             $field.setAttribute("readonly","readonly");
             $field.addEventListener("input", this.handlePreventingDefault)
@@ -309,8 +347,9 @@ export default class FormValidatorField {
         })
         this.interactive = false;
     }
+
     enableInteraction() {
-        this.fields.forEach($field => {
+        this.elements.forEach($field => {
             if(!$field.hasAttribute("data-originally-readonly")) {
                 $field.removeAttribute("readonly");
             }
@@ -322,120 +361,108 @@ export default class FormValidatorField {
 
     }
 
+    _setFieldValidationStatus(statusName, message, silentMode=false) {
+
+        var capitalizedStatusName = statusName.charAt(0).toUpperCase() + statusName.slice(1);
+        
+
+        if(statusName === "validating") {
+            this.resetValidation();
+
+            this._status = -1;
+            this.disableInteraction();
+            if(!silentMode) {
+                this.status = -1;
+            }
+        } else if(statusName === "valid") {
+            this.resetValidation();
+
+            this._status = 1;
+            this.enableInteraction();
+            if(!silentMode) {
+                this.status = 1;
+            }
+            this._validator.events.onChange && (this._validator.events.onChange(this._validator));
+        } else if(statusName === "invalid") {
+            this.resetValidation();
+
+            this._status = 0; //invalid 
+            this.enableInteraction();
+            if(!silentMode) {
+                this.status = 0; //invalid 
+            }
+            this._validator.events.onChange && (this._validator.events.onChange(this._validator));
+        } else {
+            this._status = undefined; //unvalidated 
+            this.enableInteraction();
+            if(!silentMode) {
+                this.status = undefined; //unvalidated 
+            }
+            this._validator.events.onChange && (this._validator.events.onChange(this._validator));
+        }
+
+        this.message = message;
+
+        if(!silentMode) {
+
+            var fieldRenderPreferences = this.getFieldRenderPreferences()
+
+            if(fieldRenderPreferences["add"+capitalizedStatusName+"Class"]) {
+                this.elements.forEach($field => {
+                    if(typeof this.getValue() === "object" && this.getValue().length > 0) {
+                        if(this.getValue().includes($field.value)) {
+                            $field.classList.add(fieldRenderPreferences[statusName+"Class"]);
+                        }
+                    } else {
+                        $field.classList.add(fieldRenderPreferences[statusName+"Class"]);
+                    }
+                    
+                })
+            }
+            if(fieldRenderPreferences["addWrapper"+capitalizedStatusName+"Class"]) {
+                this.$wrapper.classList.add(fieldRenderPreferences["wrapper"+capitalizedStatusName+"Class"]);
+            }
+
+            if(fieldRenderPreferences["show"+capitalizedStatusName+"Message"] && message && message.length) {
+                this.message = message;
+                let messageHTML = fieldRenderPreferences[statusName+"MessageHTML"].replace("{{message}}", message);
+                let $message = parseHTML(messageHTML);
+                this.$wrapper.appendChild($message);
+                this.validationElements.push($message);
+            }
+        }
+        
+    }
+
     // Set visual states
-    setValidating(message) {
-        this.resetValidation();
-        this.status = -1;
-        this.disableInteraction();
-
-        let fieldRenderPreferences = this.getFieldRenderPreferences()
-
-        if(fieldRenderPreferences.addValidatingClass) {
-            this.fields.forEach($field => {
-                if(typeof this.getValue() === "object" && this.getValue().length > 0) {
-                    if(this.getValue().includes($field.value)) {
-                        $field.classList.add(fieldRenderPreferences.validatingClass);
-                    }
-                } else {
-                    $field.classList.add(fieldRenderPreferences.validatingClass);
-                }
-                
-            })
-        }
-        if(fieldRenderPreferences.addWrapperValidatingClass) {
-            this.$wrapper.classList.add(fieldRenderPreferences.wrapperValidatingClass);
-        }
-
-        if(fieldRenderPreferences.showValidatingMessage && message && message.length) {
-            this.message = message;
-            let messageHTML = fieldRenderPreferences.validatingMessageHTML.replace("{{message}}", message);
-            let $message = parseHTML(messageHTML);
-            this.$wrapper.appendChild($message);
-            this.validationElements.push($message);
-        }
+    setUnvalidated(message, silentMode) {
+        this._setFieldValidationStatus("unvalidated", message, silentMode); 
     }
-    setValid(message) {
-        this.resetValidation();
-        this.status = 1;
-        this.enableInteraction();
-
-        let fieldRenderPreferences = this.getFieldRenderPreferences()
-
-        if(fieldRenderPreferences.addValidClass) {
-            this.fields.forEach($field => {
-                if(typeof this.getValue() === "object" && this.getValue().length > 0) {
-                    if(this.getValue().includes($field.value)) {
-                        $field.classList.add(fieldRenderPreferences.validClass);
-                    }
-                } else {
-                    $field.classList.add(fieldRenderPreferences.validClass);
-                }
-                
-            })
-        }
-        if(fieldRenderPreferences.addWrapperValidClass) {
-            this.$wrapper.classList.add(fieldRenderPreferences.wrapperValidClass);
-        }
-
-        if(fieldRenderPreferences.showValidMessage && message && message.length) {
-            this.message = message;
-            let messageHTML = fieldRenderPreferences.validMessageHTML.replace("{{message}}", message);
-            let $message = parseHTML(messageHTML);
-            this.$wrapper.appendChild($message);
-            this.validationElements.push($message);
-        }
+    setValidating(message, silentMode) {
+        this._setFieldValidationStatus("validating", message, silentMode); 
     }
-    setInvalid(message) {
-        this.resetValidation();
-        this.status = 0;
-        this.enableInteraction();
-
-        let fieldRenderPreferences = this.getFieldRenderPreferences()
-
-        if(fieldRenderPreferences.addInvalidClass) {
-            this.fields.forEach($field => {
-                if(typeof this.getValue() === "object" && this.getValue().length > 0) {
-                    if(this.getValue().includes($field.value)) {
-                        $field.classList.add(fieldRenderPreferences.invalidClass);
-                    }
-                } else {
-                    $field.classList.add(fieldRenderPreferences.invalidClass);
-                }
-                
-            })
-        }
-        if(fieldRenderPreferences.addWrapperInvalidClass) {
-            this.$wrapper.classList.add(fieldRenderPreferences.wrapperInvalidClass);
-        }
-
-        if(fieldRenderPreferences.showInvalidMessage && message && message.length) {
-            this.message = message;
-            let messageHTML = fieldRenderPreferences.invalidMessageHTML.replace("{{message}}", message);
-            let $message = parseHTML(messageHTML);
-            this.$wrapper.appendChild($message);
-            this.validationElements.push($message);
-        }
-        
+    setValid(message, silentMode) {
+        this._setFieldValidationStatus("valid", message, silentMode) 
+    }
+    setInvalid(message, silentMode) {
+        this._setFieldValidationStatus("invalid", message, silentMode) 
     }
 
-    resetValidation() {
-        
-        this.logger.log("resetValidation(): Resetting field validation");
-        this.status = undefined;
-        this.message = undefined;
+    
+    removeValidationElements() {
 
         let fieldRenderPreferences = this.getFieldRenderPreferences()
-        
+
         this.$wrapper.classList.remove(fieldRenderPreferences.wrapperValidatingClass);
-        this.fields.forEach($field => {
+        this.elements.forEach($field => {
             $field.classList.remove(fieldRenderPreferences.validatingClass);
         })
         this.$wrapper.classList.remove(fieldRenderPreferences.wrapperValidClass);
-        this.fields.forEach($field => {
+        this.elements.forEach($field => {
             $field.classList.remove(fieldRenderPreferences.validClass);
         })
         this.$wrapper.classList.remove(fieldRenderPreferences.wrapperInvalidClass);
-        this.fields.forEach($field => {
+        this.elements.forEach($field => {
             $field.classList.remove(fieldRenderPreferences.invalidClass);
         })
 
@@ -443,37 +470,51 @@ export default class FormValidatorField {
             validationElement.remove()
         })
         this.validationElements = [];
+    }
 
+    resetValidation() {
+        
+        this.logger.log("resetValidation(): Resetting field validation");
+
+        this.setUnvalidated(undefined)
+        this.removeValidationElements();
         this.enableInteraction();
 
     }
 
 
     validate(cb=()=>{}) {
-        
-        let v = () => {
-            // this.resetValidation()
-            this._validate().then((x) => {cb(true)}).catch((x) => {cb(false)})
-        }
-        setTimeout(v,1);
+    
+        this._validate().then((x) => {cb(true)}).catch((x) => {cb(false)})
+
     }
 
-    _validate(resultOnly=false) {
+    _validate(silentMode=false) {
 
-        if(this.status === -1) {
+        var fieldRenderPreferences = this.getFieldRenderPreferences()
+
+        let validatingMessage = fieldRenderPreferences.validatingMessage;
+        let validMessage = fieldRenderPreferences.validMessage;
+
+
+
+        if(this._status === -1) {
             this.logger.logWarning("validate(): Field \"#"+this.name+"\" is still being validated");
             return new Promise((resolve, reject) => {
+                this.setValidating(validatingMessage, silentMode);
                 reject()
             })
         }
 
-        if(this.status === 1 || this.status === 0) {
-            let status = this.status;
+        if(this._status === 1 || this._status === 0) {
+            let status = this._status;
             this.logger.logWarning("validate(): Field \"#"+this.name+"\" hasn't changed since last validation");
             return new Promise((resolve, reject) => {
                 if(status === 1) {
+                    this.setValid(validMessage, silentMode);
                     resolve()
                 } else {
+                    this.setInvalid(this.message, silentMode);
                     reject()
                 }
             })
@@ -491,51 +532,48 @@ export default class FormValidatorField {
 
         (events && events.onBeforeValidateField) && (events.onBeforeValidateField(this));
 
-        var fieldRenderPreferences = this.getFieldRenderPreferences()
-
-        let validatingMessage = fieldRenderPreferences.validatingMessage;
-        let validMessage = fieldRenderPreferences.validMessage;
-
-        if(!resultOnly) {
-            this.setValidating(validatingMessage);
-        }
+        this.setValidating(validatingMessage, silentMode);
 
         let handleValidationPromise = async (resolveValidationPromise, rejectValidationPromise) => {
+            
             var value = this.getValue()
             var rules = this.getRules();
-            
+  
             var isValid = true;
-            
-            for(const rule of rules) {
-                
+
+            function runRuleTest(rule, value) {
+                return rule.test(value);
+            } 
+
+            for (const rule of rules) {
+
                 if(!isValid) {
                     break;
                 }
 
-                await rule.test(value, (cb) => {
-                    if(!cb) {
-                        isValid = false;
-                        this.logger.log("validate(): Field \"#"+this.name+"\" is not valid", this);
-                        if(!resultOnly) {
-                            this.setInvalid(rule.message);
-                        }
-                        rejectValidationPromise();
-                        (events && events.onValidateField) && (events.onValidateField(this));
-                    }
-                })
+                await runRuleTest(rule, value).then(() => {}).catch((message) => {
+                    
+                    isValid = false;
+                    this.logger.log("validate(): Field \"#"+this.name+"\" is not valid", this);
+                    this.setInvalid(message, silentMode);
+                    rejectValidationPromise();
+                    
+                    (events && events.onValidateField) && (events.onValidateField(this));
+                    
+                });
 
             }
 
             if(isValid) {
                 this.logger.log("validate(): Field \"#"+this.name+"\" is valid", this);
-                if(!resultOnly) {
-                    this.setValid(validMessage);
-                }
+                this.setValid(validMessage, silentMode);
                 resolveValidationPromise();
                 (events && events.onValidateField) && (events.onValidateField(this));
+
             }
-    
+
         }
+
 
         return new Promise(handleValidationPromise);
 

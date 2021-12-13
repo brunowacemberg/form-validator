@@ -5,7 +5,6 @@ import minLength from './defaultRules/minLength';
 import maxLength from './defaultRules/maxLength';
 import regex from './defaultRules/regex';
 import email from './defaultRules/email';
-import fullName from './defaultRules/fullName';
 import equal from './defaultRules/equal';
 import hasValues from './defaultRules/hasValues';
 import cpf from './defaultRules/cpf';
@@ -18,7 +17,6 @@ export default {
   maxLength,
   regex,
   email,
-  fullName,
   equal,
   hasValues,
   cpf,

@@ -3,363 +3,345 @@
 <head>
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Form Validator</title>
+    <title>LFRGS FormValidator Demo</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
     <script src='../dist/FormValidator.js'></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
-    
 </head>
-<body>
-    
-    <div class="container my-3">
-        
-        <form id="formId" action="#" autocomplete="off" style="position: relative">
 
-            <div id="loading" class="d-none" style="z-index:1;width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; align-items: center; justify-content: center; color: black; font-size: 30px; color: #333; background:rgba(255,255,255,0.5)">
+<style>
+
+    body {
+        background-color: #334ab1;
+    }
+
+    #bg {
+        background-color: #334ab1;
+        position:fixed;
+        left: 0; 
+        top:0;
+        width: 100%;
+        height: 100%;
+    }
+
+    label {
+        margin-bottom: 2px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #311a1a;
+        text-transform: uppercase;
+    }
+
+    table {
+        width: auto;
+        min-width: 50%;
+        display: inline-block;
+        margin: 0
+    }
+
+
+    .paper {
+        background: white;
+        box-shadow: 0px 0px 10px 3px rgba(9, 9, 9, 0.3);
+        position: relative;
+        z-index: 1;
+    }
+    .card {
+        background: #fff;
+        border-radius: .5rem
+    }
+
+    .card-body {
+        padding: 2rem
+    }
+
+    .form-control {
+        border-radius: 0;
+        border: none;
+        border-bottom: #d6d3d3 solid 2px;
+        height: 40px;
+        background-color: rgba(5, 24, 64, 0.05);
+        padding: .25rem .5rem;
+        transition: background-color .3s, border .3s;
+        font-size: 15px
+    }
+
+    .form-control:focus {
+        border-color: inherit  !important;
+        -webkit-box-shadow: none  !important;
+        box-shadow: none !important;
+        background-color: rgba(4, 18, 49, 0.05);
+
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-bottom: #888888 solid 2px;
+    }
+
+    .form-control::placeholder {
+        color: rgb(179, 179, 179);
+        font-size: 16px;
+        font-style: oblique;
+    }
+
+
+    .logo {
+        text-align: center;
+        padding: 2rem 3rem;
+       
+    }
+
+    .logo img {
+        width: 100%;
+        max-width: 320px;
+    }
+    .logo span {
+        background: #334ab1;
+        padding: 5px 16px;
+        color: #fff;
+        text-transform: uppercase;
+        font-weight: 700;
+        font-size: 24px;
+        display: inline-block;
+
+    }
+
+    .card-title {
+        margin-bottom: 0;
+    }
+    .card-title h2 {
+        margin-bottom: -25px;
+        position: relative;
+        display: inline-block;
+        color: #4a4162;
+        text-transform: uppercase;
+        font-size: 24px;
+        font-weight: bold;
+        top: -32px;
+        margin-left: -8px;
+        background: #fff;
+        padding: 0 .5rem;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        max-width: 90%;
+
+    }
+
+    .card-body {
+    }
+
+    @media (max-width: 992px) {
+        .card-title h2 {
+            font-size: 18px;
+            top: -34px;
+        }
+        .logo span {
+            background: #334ab1;
+            font-size: 13px;
+        }
+    }
+
+    .btn {
+        font-size: 15px
+    }
+
+    .btn.btn-primary {
+        background-color: #334ab1 !important;
+        border-color: #334ab1 !important;
+    }
+
+
+    .btn.btn-primary:hover {
+        background-color: #293e9b !important;
+        border-color: #334ab1 !important;
+    }
+
+    .repeatable-btn {
+        background-color: #ccc;
+        color: #000;
+        font-weight: bold;
+        width: 22px;
+        height: 22px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding-bottom: 2px;
+        border-radius: 11px;
+    }
+    a:not(.btn){
+        color: #5a3881 !important;
+    }
+
+</style>
+<body>
+    <div id="bg"></div>
+    
+    <div class="container h-100 my-3 d-flex align-items-center justify-content-center">
+        
+        <div class="paper mt-lg-5 pt-3 p-lg-5 mb-5 w-100">
+
+            <div id="loading" class="d-none" style="z-index:1;width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; align-items: flex-start; justify-content: center; color: black; font-size: 30px; color: #333; background:rgba(255,255,255,0.7); padding-top: 220px">
                 Carregando...
             </div>
 
-            <div class="row">
-                <div class="col-md">
-                    <div class="form-group form-group-lg">
-                        <label for="field_name">Nome completo</label>
-                        <input type="text" class="form-control form-control-lg" name="field_name" placeholder="Your full name">
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md">
-                    <div class="form-group form-group-lg">
-                        <label for="field_email">Email address</label>
-                        <input type="text" class="form-control form-control-lg" name="field_email" placeholder="Your email address">
-                    </div>
-                </div>
-                <div class="col-md">
-                    <div class="form-group form-group-lg">
-                        <label for="field_phoneNumber">Phone number</label>
-                        <input type="text" class="form-control form-control-lg" name="field_phoneNumber" placeholder="Your phone number">
-                    </div>
-                </div>
-            </div>
+            <div id="section-form">
 
-            <div class="row">
-
-                <div class="col-md">
-
-                    <div class="form-group form-group-lg">
-                        <div><label>What are your interests?</label></div>
-
-                        
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" value="interest1" id="field_interests_1" name="field_interests">
-                                    <label class="form-check-label" for="field_interests_1">
-                                        Interest 1
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" value="interest2" id="field_interests_2" name="field_interests">
-                                    <label class="form-check-label" for="field_interests_2">
-                                        Interest 2
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" value="interest3" id="field_interests_3" name="field_interests">
-                                    <label class="form-check-label" for="field_interests_3">
-                                        Interest 3
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" value="interest4" id="field_interests_4" name="field_interests">
-                                    <label class="form-check-label" for="field_interests_4">
-                                        Interest 4
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" value="interest5" id="field_interests_5" name="field_interests">
-                                    <label class="form-check-label" for="field_interests_5">
-                                        Interest 5
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="checkbox" value="other" id="field_interests_other" name="field_interests">
-                                    <label class="form-check-label" for="field_interests_other">
-                                        Other (specify)
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-
-                    </div>
-                </div>
-
-                <div class="col-md">
-                    <div class="form-group form-group-lg">
-                        <label for="field_email">Other interests</label>
-                        <textarea class="form-control" name="field_interests_other_text" placeholder="Tell us your other interests"></textarea>
-
-                    </div>
                     
+                <div class="logo pb-lg-5">
+    
+
+                    <div class="">
+                        <span class="d-none d-lg-inline-block">LFRGS Form Validator</span>
+                        <span class="d-lg-none">Ficha de Inscrição</span>
+
+                    </div>
+
                 </div>
 
-            </div>
-
-  
-
-            <div class="row">
-                <div class="col-md">
-                    <div class="form-group form-group-lg">
-                        <div><label>Are you currently employed?</label></div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="field_employed" id="field_employed_yes" value="yes">
-                            <label class="form-check-label" for="field_employed_yes">Yes</label>
+                <form class="mt-lg-5 px-3" id="subscriptionForm" action="#" autocomplete="off" style="position: relative">
+                 
+    
+                    <div class="card mt-3">
+                        <div class="card-title pl-4">
+                            <h2 class="">Dados pessoais</h2>
                         </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="field_employed" id="field_employed_no" value="no">
-                            <label class="form-check-label" for="field_employed_no">No</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        <div class="card-body mt-0 pt-2 px-4">
+    
+    
+    
+                            <div class="row">
+                                <div class="col-lg-9">
+                                    <div class="form-group">
+                                        <label for="field_name">Nome completo</label>
+                                        <input type="text" class="form-control form-control-lg" name="field_name">
+                                    </div>
+                                </div>
+    
+<!-- 
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="form-group">
+                                        <label for="field_cpf">CPF</label>
+                                        <input type="text" class="form-control form-control-lg" name="field_cpf" id="field_cpf">
+                                    </div>
+                                </div> -->
+    
+    
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="form-group">
+                                        <label for="field_birthday">Data de nascimento</label>
+                                        <input type="text" class="form-control form-control-lg" name="field_birthday" id="field_birthday">
+                                    </div>
+                                </div>
+                
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="form-group">
+                                        <label for="field_phone">Telefone</label>
+                                        <input type="text" class="form-control form-control-lg" name="field_phone" id="field_phone">
+                                    </div>
+                                </div>
 
-            <div data-form-validator-group-wrapper="workData_employed">
+                                                
+                            </div>
 
-                <div class="row">
-                    <div class="col-md">
-                        <div class="form-group form-group-lg">
-                            <label for="field_company">Where do you work at?</label>
-                            <input type="text" class="form-control form-control-lg" name="field_company" id="field_company" placeholder="Company name">
-                        </div>
-                    </div>
-                    <div class="col-md">
-                        <div class="form-group form-group-lg">
-                            <label for="field_employees">How many employees?</label>
-                            <select class="form-control form-control-lg" name="field_employees" id="field_employees">
-                                <option value="">Select</option>
-                                <option value="100">Up to 100</option>
-                                <option value="500">Up to 500</option>
-                                <option value="1000">Up to 1000</option>
-                                <option value="1000+">1000 or more</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
 
-            </div>
+                          
+                         
 
-        
-            
-            <div class="d-flex justify-content-end mt-5">
-                <a onclick="validator.resetForm()" class="btn btn-secondary btn-lg mr-2">Reset form</a>
-                <input type="submit" onclick="event.preventDefault(); validator.submit()" class="btn btn-primary btn-lg" value="Submit form">
-            </div>
+                            <div class="row" data-form-validator-repeatable-wrapper="emailRepeatable" data-form-validator-repeatable-limit="5"> 
+                                    
+                                <div class="col-md-6 col-lg-6" data-form-validator-repeatable-item>
+                                    <div class="form-group">
+                                        <label for="field_email">Email principal</label>
+                                        <input type="text" class="form-control form-control-lg" name="field_email" id="field_email">
+                                    </div>
+                                </div>
+                            
+                            </div>
 
-        </form>
-        
-    </div>
+                            <a href="#" class="repeatable-btn" onclick="subscriptionForm_validator.addRepeatable('emailRepeatable')">+</a>
+                            <a href="#" class="repeatable-btn" onclick="subscriptionForm_validator.removeRepeatable('emailRepeatable')">-</a>
 
     
+                        </div>
+                    </div>
+
+        
+                    <div class="d-flex justify-content-center justify-content-md-between mt-4 px-3 px-md-0 pb-3 pb-lg-0 text-center">
+                        <a onclick="subscriptionForm_validator.resetForm()" class="btn btn-outline-secondary btn-lg mr-2">Limpar campos</a>
+                        <input id="submitBtn" type="submit" onclick="event.preventDefault(); subscriptionForm_validator.submit()" class="btn btn-primary btn-lg" value="Enviar inscrição">
+                    </div>
+    
+                </form>
+
+            </div>
+            
+        </div>
+
+    </div>
     
     <script>
         
-        var validator = new FormValidator("formId", {
+        var subscriptionForm_validator = new FormValidator("subscriptionForm", {
             
-            debug: true,
             enableDataRestore: true, // will be deleted on form submission or reset
-            resetFieldValidationOnChange: true,
-            validateFieldOnInput: false,
-            validateFieldOnBlur: false,
-
-            groupWrapperHiddenClass: "d-none",
-            groupWrapperVisibleClass: "d-block",
+       
             
 
-            fieldRenderPreferences: {
-                wrapperClass: "form-group",
-                wrapperHiddenClass: "d-none",
-                wrapperVisibleClass: "d-block",
-                
-                // "Validating" field state
-                showValidatingMessage: false,
-                validatingMessage: "Validating...",
-                validatingMessageHTML: "<div class=\"valid-feedback text-muted d-block\">{{message}}</div>",
-                addValidatingClass: false,
-                validatingClass: "is-validating",
-                addWrapperValidatingClass: false,
-                wrapperValidatingClass: "is-validating",
-                
-                // "Valid" field state
-                showValidMessage: false,
-                validMessage: "Field is valid",
-                validMessageHTML: "<div class=\"valid-feedback text-success d-block\">{{message}}</div>",
-                addValidClass: false,
-                validClass: "is-valid",
-                addWrapperValidClass: false,
-                wrapperValidClass: "is-valid",
-                
-                // "Invalid" field state (message will come from first unmatched rule)
-                showInvalidMessage: true,
-                invalidMessageHTML: "<div class=\"invalid-feedback text-danger d-block\">{{message}}</div>",
-                addInvalidClass: true,
-                invalidClass: "is-invalid",
-                addWrapperInvalidClass: true,
-                wrapperInvalidClass: "is-invalid"
-                
-            },
-            
             fields: [
-                
                 {
-                    name: "field_name", // may be array if tyoe radio (equal names, different ids, same value)
-                    group: "personalData",
-                    rules: [
-                        "required", "fullName"
-                    ]
-                    
+                    name: "field_name",
+                    group: "personal",
+                    rules: ["required", "minLength:3"]
                 },
-                
+                // {
+                //     name: ["field_cpf"], 
+                //     group: "personal",
+                //     rules: ["required", "cpf"],
+                //     mask: "999.999.999-99",
+                //     fieldRenderPreferences: {
+                //         addValidClass: true
+                //     }
+                // },
                 {
-                    name: "field_email", 
-                    group: "personalData",
-                    rules: [
-                        "required", 
-                        "email", 
-                        {
-                            name: 'userExists',
-                            parameter: null,
-                            message: "Email is already registered",
-                            async: true,
-                            fn: function(value, parameter, cb) {
-                                
-                                let r = function() {
-                                    if(value === "bruno.wacemberg@liferay.com") {
-                                        cb(false)
-                                    } else {
-                                        cb(true)
-                                    }
-                                }
-                                setTimeout(r, 5500)
-                            }
-                        }
-                    ],
-                    events: {
-                        onBeforeValidate: function(field) {
-                            console.log("onBeforeValidate específico da field", field)
-                        },
-                        onValidate: function(field) {
-                            console.log("VALIDOU HEIMMMMM", field.status)
-                        }
-                    },
-                    validateFieldOnInput: false,
-                    fieldRenderPreferences: {
-                        showValidMessage: true,
-                        validMessage: "Email is valid ;)",
-                        showValidatingMessage: true,
-                        validatingMessage: "Validating email...",
-                        addWrapperValidClass: true,
-                        addValidClass: true,
-                    },
+                    name: ["field_birthday"], 
+                    group: "personal",
+                    rules: ["required", "date"],
+                    mask: "99/99/9999"
                 },
-                
                 {
-                    name: "field_phoneNumber", // may be array if tyoe radio (equal names, different ids, same value)
-                    group: "personalData",
-                    rules: [
-                        "required",
-                        {
-                            name: 'minLength',
-                            parameter: 14
-                        },
-                        {
-                            name: 'maxLength',
-                            parameter: 15
-                        }
-                    ],
+                    name: "field_phone", // may be array if tyoe radio (equal names, different ids, same value)
+                    group: "personal",
+                    rules: ["required"],
                     mask: "(99) 9999-99999"
                 },
-
                 {
-                    name: "field_interests", // may be array if tyoe radio (equal names, different ids, same value)
-                    group: "personalData",
-                    rules: [
-                        {
-                            name: 'required',
+                    name: ["field_email"], 
+                    group: "personal",
+                    rules: ["required","email",{
+                        async: true,
+                        fn: (value, parameter, cb) => {
+                            setTimeout(function() {cb(value !== "bruno.wacemberg@liferay.com")}, 2000)
                         },
+                        message: "Email ja existe"
+                    }], 
+                    
+                    dependencyRules: [
                         {
-                            name: 'customMinlength',
-                            message: "Select a minimum of 3 items or choose \"other\"",
-                            parameter: 3,
-                            fn: function(values, parameter) {
-                                return(values.includes("other") || values.length >= parameter)
-                            }
-                        }
-                    ],
-                    dependenceRules: [
-                        {
-                            name: "hasValues",
-                            parameter: ["other"],
-                            fields: ["field_interests_other_text"]
+                            fn: function() {
+                                return subscriptionForm_validator.fields.field_email.getValue().length == 3;
+                            },
+                            fields: ["field_phone"]
                         }
                     ]
                 },
 
                 {
-                    name: "field_interests_other_text", // may be array if tyoe radio (equal names, different ids, same value)
-                    group: "personalData",
-                    rules: [
-                        {
-                            name: 'minLength',
-                            parameter: 3,
-                            message: "Please specify "
-                        }
-                    ]
+                    name: "field_other", // may be array if tyoe radio (equal names, different ids, same value)
+                    group: "personal",
+                    rules: ["required"],
                 },
-                
-            
-                {
-                    name: "field_employed",
-                    group: "personalData",
-                    rules: [,
-                        {
-                            name: "required"
-                        }
-                    ],
-
-                    dependenceRules: [
-                        {
-                            name: "equal",
-                            parameter: "yes",
-                            groups: ["workData_employed"]
-                        }
-                    ]
-                },
-                            
-                {
-                    name: "field_company",
-                    group: "workData_employed",
-                    rules: [,
-                        {
-                            name: "required"
-                        }
-                    ]
-                },
-                {
-                    name: "field_employees",
-                    group: "workData_employed",
-                    rules: ["required"]
-                }
 
             ],
             
@@ -369,67 +351,57 @@
             hideLoadingFn: function() {
                 document.getElementById("loading").classList.add("d-none");
             },
-            submitFn: function(v, cb) {
+
+            submitFn: function(validator, callback) {
+
+                console.log('SUBMIT FUNCTION SENDO CHAMADA')
+                validator.getFormData();
+
                 setTimeout(function() {
-                    cb(true)
+                    callback(false)
                 }, 3000)
+                
             },
 
             events: {   
-                onInit: function(validator) {
-                    console.log('onInit global', validator);
+                onTrySubmit: function(validator) {
+                    console.log('TENTOU')
                 },
-                onBeforeReset: function(form){
-                    console.log('onBeforeReset global', form);
-                },
-                onReset: function(form){
-                    console.log('onReset global', form);
-                },
-                onBeforeSubmit: function(validator){
-                    console.log('onBeforeSubmit');
-                },
-                onSubmitFail: function(validator){
-                    console.log('onSubmitFail', validator);
+                onBeforeSubmit: function(validator) {
+                    console.log('VAI SUBMITAR')
                 },
                 onSubmit: function(validator){
-                    console.log('onSubmit', validator);
+                    console.log('SUBMITOU');
+                    console.log(validator.getSerializedFormData());
+                    alert('enviou')
                 },
-                
-                onBeforeValidate: function(field){
-                    console.log('onBeforeValidate global', field);
-                },
-                onValidate: function(form){
-                    console.log('onValidate global', form);
-                },
-
-                onBeforeValidateField: function(field){
-                    console.log('onBeforeValidateField global', field);
-                },
-                onValidateField: function(field){
-                    console.log('onValidateField global', field);
+                onSubmitFail: function(validator){
+                    console.log('SUBMITOU E DEU RUIM');
+                    validator.validateFieldOnBlur = true
+                    alert('enviou não')
                 },
 
-                onFieldInput: function(field){
-                    console.log('onFieldInput global', field);
+                onChange: function(validator) {
+                    var submitBtn = document.getElementById('submitBtn');
+                    if(validator.isValid()) {
+                        console.log('valid');
+                        submitBtn.removeAttribute('disabled')
+                    } else {
+                        console.log('not valid');
+                        submitBtn.setAttribute('disabled', 'disabled');
+                    }
                 },
 
-                
-                onBeforeShowDependentFields: function(fields){
-                    console.log('onBeforeShowDependentFields global', fields);
-                },
-                onShowDependentFields: function(fields){
-                    console.log('onShowDependentFields global', fields);
-                },
-                onBeforeHideDependentFields: function(fields){
-                    console.log('onBeforeHideDependentFields global', fields);
-                },
-                onHideDependentFields: function(fields){
-                    console.log('onHideDependentFields global', fields);
+                onInit: function(validator) {
+                    validator.defaultRules.required.message = "Campo obrigatório"
+                    validator.defaultRules.minLength.message = "Campo inválido"
+                    validator.defaultRules.cpf.message = "Digite um CPF válido"
+                    validator.defaultRules.date.message = "Digite uma data válida"
+                    validator.defaultRules.phone.message = "Digite um telefone válido."
                 }
             }
             
         })
-        
     </script>
     
 </body>

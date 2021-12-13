@@ -4,9 +4,9 @@ export default {
     parameter: null,
     message: "Invalid email address",
     async: false,
-    fn: (values, parameter) => {
+    fn: (value, parameter) => {
         var emailRegex = /[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-        return emailRegex.test(values) || !values.length
+        return emailRegex.test(value) || !value.length
     }
 
 }

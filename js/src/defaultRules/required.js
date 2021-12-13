@@ -4,8 +4,8 @@ export default {
     parameter: null,
     message: "Campo obrigatório",
     async: false,
-    fn: (values, parameter) => {
-        return (values && values.length > 0)
+    fn: (value, parameter) => {
+        return (value && value.length > 0)
     }
 
 }

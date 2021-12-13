@@ -6,19 +6,19 @@ export default {
     parameter: null,
     message: "Campo inválido",
     async: false,
-    fn: (values, parameter) => {
+    fn: (value, parameter) => {
         let hasValues = true;
         if(typeof parameter === "object") {
             if(parameter.length === 0) {
                 hasValues = false;
             }
             parameter.forEach(p => {
-                if(!values.includes(p)) {
+                if(!value.includes(p)) {
                     hasValues = false;
                 }
             })
         } else {
-            if(values.includes(parameter)) {
+            if(value.includes(parameter)) {
                 hasValues = true;
             }
         }
