@@ -7,27 +7,12 @@ gulp.task('default', function(done) {
 
     return gulp.src('./js/app.js')
     .pipe(webpack({
-        mode: "development",
+        mode: "production",
         output: {
             filename: "FormValidator.js"
-        },
-        module: {
-            rules: [
-                {
-                    test: /\.m?js$/,
-                    exclude: /(node_modules)/,
-                    use: {
-                        loader: 'babel-loader',
-                        options: {
-                            presets: ["@babel/preset-env"],
-                        }
-                    }
-                }
-            ]
         }
     }))
     .pipe(gulp.dest('./dist'))
     .on('end', done);
-    
 
 })

@@ -1,12 +1,16 @@
+const INITIALIZED_FIELD_DATA_ATTRIBUTE = 'data-form-validator-initialized-field';
 const GROUP_WRAPPER_DATA_ATTRIBUTE = 'data-form-validator-group-wrapper';
+const REPEATABLE_WRAPPER_DATA_ATTRIBUTE = 'data-form-validator-repeatable-wrapper';
+const REPEATABLE_LIMIT_DATA_ATTRIBUTE = 'data-form-validator-repeatable-limit';
+const REPEATABLE_ITEM_DATA_ATTRIBUTE = 'data-form-validator-repeatable-item';
 
 const DEFAULT_OPTIONS = {
 
     debug: false,
-    enableDataRestore: false, // will be deleted on form submission or reset
+    enableDataRestore: true, // will be deleted on form submission or reset
     resetFieldValidationOnChange: true,
     validateFieldOnInput: false,
-    validateFieldOnBlur: false,
+    validateFieldOnBlur: true,
 
     groupWrapperHiddenClass: "d-none",
     groupWrapperVisibleClass: "d-block",
@@ -17,21 +21,21 @@ const DEFAULT_OPTIONS = {
         wrapperVisibleClass: "d-block",
         
         // "Validating" field state
-        showValidatingMessage: false,
+        showValidatingMessage: true,
         validatingMessage: "Validating...",
         validatingMessageHTML: "<div class=\"valid-feedback text-muted d-block\">{{message}}</div>",
-        addValidatingClass: false,
+        addValidatingClass: true,
         validatingClass: "is-validating",
-        addWrapperValidatingClass: false,
+        addWrapperValidatingClass: true,
         wrapperValidatingClass: "is-validating",
         
         // "Valid" field state
-        showValidMessage: false,
+        showValidMessage: true,
         validMessage: "Field is valid",
         validMessageHTML: "<div class=\"valid-feedback text-success d-block\">{{message}}</div>",
-        addValidClass: false,
+        addValidClass: true,
         validClass: "is-valid",
-        addWrapperValidClass: false,
+        addWrapperValidClass: true,
         wrapperValidClass: "is-valid",
         
         // "Invalid" field state (message will come from first unmatched rule)
@@ -40,8 +44,16 @@ const DEFAULT_OPTIONS = {
         addInvalidClass: true,
         invalidClass: "is-invalid",
         addWrapperInvalidClass: true,
-        wrapperInvalidClass: "is-invalid"
-        
+        wrapperInvalidClass: "is-invalid",
+
+        // "Invalid" field state (message will come from first unmatched rule)
+        showUnvalidatedMessage: true,
+        unvalidatedMessage: "Validating...",
+        unvalidatedMessageHTML: "<div class=\"unvalidated-feedback text-muted d-block\">{{message}}</div>",
+        addUnvalidatedClass: true,
+        unvalidatedClass: "is-unvalidated",
+        addWrapperUnvalidatedClass: true,
+        wrapperUnvalidatedClass: "is-unvalidated"
     },
     
     fields: [
@@ -56,6 +68,7 @@ const DEFAULT_OPTIONS = {
         onInit: undefined,
         onBeforeReset: undefined,
         onReset: undefined,
+        onTrySubmit: undefined,
         onBeforeSubmit: undefined,
         onSubmitFail: undefined,
         onSubmit: undefined,
@@ -72,9 +85,11 @@ const DEFAULT_OPTIONS = {
 
 } 
 
-
-
 export default {
+    INITIALIZED_FIELD_DATA_ATTRIBUTE,
     GROUP_WRAPPER_DATA_ATTRIBUTE,
-    DEFAULT_OPTIONS
+    DEFAULT_OPTIONS,
+    REPEATABLE_WRAPPER_DATA_ATTRIBUTE,
+    REPEATABLE_LIMIT_DATA_ATTRIBUTE,
+    REPEATABLE_ITEM_DATA_ATTRIBUTE
 }

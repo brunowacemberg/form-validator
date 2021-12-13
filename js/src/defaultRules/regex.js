@@ -3,13 +3,13 @@ export default {
     parameter: null,
     message: 'Valor inválido',
     async: false,
-    fn: (values, parameter) => {
+    fn: (value, parameter) => {
         if(!parameter) {
             return true
         }
         let allValid = true;
         var exp =  new RegExp(parameter);
-        values.forEach(value => {
+        value.forEach(value => {
             if(!exp.test(value)) {
                 allValid = false
             }

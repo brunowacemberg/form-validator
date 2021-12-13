@@ -6,20 +6,20 @@ export default {
     parameter: null,
     message: "Campo inválido",
     async: false,
-    fn: (values, parameter) => {
+    fn: (value, parameter) => {
         let isEqual = true;
         if(typeof parameter === "object") {
             parameter.forEach(p => {
-                if(!values.includes(p)) {
+                if(!value.includes(p)) {
                     isEqual = false;
                 }
-                if(parameter.length !== values.length) {
+                if(parameter.length !== value.length) {
                     isEqual = false;
                 }
             })
             
         } else {
-            if(!values.includes(parameter)) {
+            if(!value.includes(parameter)) {
                 isEqual = false;
             }
         }

@@ -4,11 +4,11 @@ export default {
     parameter: null,
     message: "Quantidade de itens inválida",
     async: false,
-    fn: (values, parameter) => {
+    fn: (value, parameter) => {
         if(!parameter) {
             return true
         }
-        return (values.length === parameter)
+        return (value.length === parameter)
     }
 
 }
