@@ -100,7 +100,7 @@ export default class FormValidator {
         
         if(this.enableDataRestore) {
             this.applyFormState();
-            this.updateFormState()
+            this._validate([], true).then(() => {}).catch(() => {})
         }
 
         this.updateDependencyRules()
@@ -188,7 +188,7 @@ export default class FormValidator {
         let firstInvalidField = undefined;
         Object.keys(this.fields).every((k) => {
             let field = this.fields[k];
-            if(field.status === 0) {
+            if(field._status === 0) {
                 firstInvalidField = field;
                 return false;
             }
@@ -200,7 +200,7 @@ export default class FormValidator {
     isValidating() {
         let isValidating = false;
         this.eachField(field => {
-            if(field.status === -1) {
+            if(field._status === -1) {
                 isValidating = true;
             }
         })
@@ -301,7 +301,7 @@ export default class FormValidator {
             Object.keys(this._repeatables).forEach((repeatableInstanceIdentifier) => {
                 let repetitionAmount = this._repeatables[repeatableInstanceIdentifier]
                 for(let i=0; i<repetitionAmount; i++) {
-                    this.removeRepeatable(repeatableInstanceIdentifier, i)
+                    this.removeRepeatable(repeatableInstanceIdentifier)
                 }
             })
         }
@@ -319,9 +319,24 @@ export default class FormValidator {
     }
 
     updateFormState() {
+
+        let validationStatuses = {};
+        Object.keys(this.fields).forEach(fieldName => {
+            if(!this.fields[fieldName]) {
+                return;
+            }
+            let field = this.fields[fieldName];
+            validationStatuses[field.name] = {
+                _status: field._status,
+                status: field.status,
+                message: field.message
+            }
+        })
+
         window.localStorage.setItem('FORMVALIDATOR_FORMDATA_'+this.$form.getAttribute('id'), JSON.stringify({
             "data": this.getSerializedFormData(),
-            "repeatables": this._repeatables
+            "repeatables": this._repeatables,
+            "validation": validationStatuses
         }));
     }
 
@@ -350,7 +365,6 @@ export default class FormValidator {
                 }
             })
 
-            this.validate()
 
         }
     }
@@ -429,8 +443,10 @@ export default class FormValidator {
                                     targetField.$wrapper.classList.remove(renderPrefs.wrapperVisibleClass);
                                     targetField.disableRules()
                                     targetField.status = 1;
+                                    targetField._status = 1;
+
                                     if(resetValueOnToggle) {
-                                        targetField.setValue('')
+                                        // targetField.setValue('')
                                     }
                                 }
                             })
@@ -456,6 +472,8 @@ export default class FormValidator {
                                     targetField.$wrapper.classList.add(renderPrefs.wrapperVisibleClass)
                                     targetField.enableRules()
                                     targetField.status = undefined
+                                    targetField._status = undefined
+
                                     if(resetValueOnToggle) {
                                         targetField.setValue('')
                                     }
@@ -631,10 +649,10 @@ export default class FormValidator {
         
         let revalidatingFieldsNames = [];
         repeatingFieldsNames.forEach(fieldName => {
-            if(this.fields[fieldName]._status === 0 || this.fields[fieldName]._status === 1 || this.fields[fieldName]._status === -1) {
+            if(this.fields[fieldName].status === 0 || this.fields[fieldName].status === 1 || this.fields[fieldName].status === -1) {
                 revalidatingFieldsNames.push(fieldName)
                 this.fields[fieldName].removeValidationElements();
-                this.fields[fieldName].enableInteraction();
+                this.fields[fieldName].setUnvalidated();
             }
         })
 
@@ -644,26 +662,41 @@ export default class FormValidator {
             this.fields[fieldName].validate();
         })
 
-        repeatingFieldsNames
+        
         repeatingFieldsNames.forEach((fieldName) => {
-            let nodes = $clone.querySelectorAll('[name="'+fieldName+'"]');
-            
-            nodes.forEach(node => {
-                node.setAttribute('name', node.getAttribute('name')+itemsCount)
+            let newFieldName = fieldName+itemsCount;
+
+            let inputs = $clone.querySelectorAll('[name="'+fieldName+'"]');
+            inputs.forEach($input => {
+                $input.setAttribute('id', $input.getAttribute('id')+itemsCount)
+                $input.setAttribute('name', $input.getAttribute('name')+itemsCount)
+            })
+
+            let labels = $clone.querySelectorAll('label[for="'+fieldName+'"]');
+            labels.forEach($label => {
+                if($label.hasAttribute('for')) {
+                    $label.setAttribute('for', $label.getAttribute('for')+itemsCount)
+                    $label.innerHTML = $label.innerHTML + " ("+(itemsCount+1)+")"
+
+                }
             })
 
             $repeatableWrapper.appendChild($clone);
             let field = this.registerField({
                 ...this.fields[fieldName],
-                name: fieldName+itemsCount,
+                name: newFieldName,
             });
             if(clearValue) {
-                this.fields[fieldName+itemsCount].setValue('');
+                this.fields[newFieldName].setValue('');
             }
-            this.fields[fieldName+itemsCount].resetValidation();
+            this.fields[newFieldName].resetValidation();
             
         })
-        
+            
+        if(clearValue) {
+            this.updateFormState()
+        }
+            
 
     }
 
