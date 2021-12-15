@@ -5,7 +5,7 @@ const webpack = require('webpack-stream');
 
 gulp.task('default', function(done) {
 
-    return gulp.src('./js/app.js')
+    return gulp.src('./index.js')
     .pipe(webpack({
         mode: "production",
         output: {
