@@ -235,34 +235,36 @@
                                     </div>
                                 </div>
                 
-                                <div class="col-md-6 col-lg-3">
-                                    <div class="form-group">
-                                        <label for="field_phone">Telefone</label>
-                                        <input type="text" class="form-control form-control-lg" name="field_phone" id="field_phone">
-                                    </div>
-                                </div>
 
                                                 
                             </div>
 
 
-                          
-                         
-
-                            <div class="row" data-form-validator-repeatable-wrapper="emailRepeatable" data-form-validator-repeatable-limit="5"> 
-                                    
-                                <div class="col-md-6 col-lg-6" data-form-validator-repeatable-item>
-                                    <div class="form-group">
-                                        <label for="field_email">Email principal</label>
-                                        <input type="text" class="form-control form-control-lg" name="field_email" id="field_email">
-                                    </div>
-                                </div>
+                            <div data-form-validator-repeatable-wrapper="emailRepeatable" data-form-validator-repeatable-limit="5">
+                                <div class="row" data-form-validator-repeatable-item> 
+                                
                             
+                                    <div class="col-md-6 col-lg-6">
+                                        <div class="form-group">
+                                            <label for="field_email">E-mail</label>
+                                            <input type="text" class="form-control form-control-lg" name="field_email" id="field_email">
+                                        </div>
+                                    </div>
+    
+                                    <div class="col-md-6 col-lg-6 " >
+                                        <div class="form-group">
+                                            <label for="field_other">Outro</label>
+                                            <input type="text" class="form-control form-control-lg" name="field_other" id="field_other">
+                                        </div>
+                                    </div>
+                                
+                                </div>
+    
+                                <a href="#" class="repeatable-btn" onclick="subscriptionForm_validator.addRepeatable('emailRepeatable')">+</a>
+                                <a href="#" class="repeatable-btn" onclick="subscriptionForm_validator.removeRepeatable('emailRepeatable')">-</a>
+                                    
                             </div>
-
-                            <a href="#" class="repeatable-btn" onclick="subscriptionForm_validator.addRepeatable('emailRepeatable')">+</a>
-                            <a href="#" class="repeatable-btn" onclick="subscriptionForm_validator.removeRepeatable('emailRepeatable')">-</a>
-
+                           
     
                         </div>
                     </div>
@@ -311,12 +313,6 @@
                     mask: "99/99/9999"
                 },
                 {
-                    name: "field_phone", // may be array if tyoe radio (equal names, different ids, same value)
-                    group: "personal",
-                    rules: ["required"],
-                    mask: "(99) 9999-99999"
-                },
-                {
                     name: ["field_email"], 
                     group: "personal",
                     rules: ["required","email",{
@@ -326,21 +322,27 @@
                         },
                         message: "Email ja existe"
                     }], 
+                    // events: {
+                    //     onValidateField: function(field) {
+                    //         if(field.isValid()) {
+                                
+                    //         }
+                    //     }
+                    // }
                     
-                    dependencyRules: [
-                        {
-                            fn: function() {
-                                return subscriptionForm_validator.fields.field_email.getValue().length == 3;
-                            },
-                            fields: ["field_phone"]
-                        }
-                    ]
+                    // dependencyRules: [
+                    //     {
+                    //         fn: function() {
+                    //             return subscriptionForm_validator.fields.field_email.isValid();
+                    //         },
+                    //         fields: ["field_other"]
+                    //     }
+                    // ]
                 },
-
                 {
-                    name: "field_other", // may be array if tyoe radio (equal names, different ids, same value)
+                    name: ["field_other"], 
                     group: "personal",
-                    rules: ["required"],
+                    rules: ["required"]
                 },
 
             ],
